@@ -1,0 +1,61 @@
+const express = require("express");
+const sqlite3 = require("sqlite3").verbose();
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const app = express();
+const PORT = 3001;
+
+// Import the modular registration router
+const createRegistrationRouter = require("./auth/registration");
+
+// Middleware setup
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Connect to SQLite database
+const db = new sqlite3.Database("database.db", (err) => {
+  if (err) {
+    console.error(err.message);
+  } else {
+    console.log("Connected to the database.");
+    // This is the new, clean visitors table
+    db.run(`CREATE TABLE IF NOT EXISTS visitors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      photo_path TEXT,
+      is_banned BOOLEAN DEFAULT 0
+    )`);
+
+    // This is the new visits table with all visit-specific details
+    db.run(`CREATE TABLE IF NOT EXISTS visits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      visitor_id INTEGER NOT NULL,
+      entry_time TEXT NOT NULL,
+      exit_time TEXT,
+      phone_number TEXT,
+      unit TEXT NOT NULL,
+      reason_for_visit TEXT,
+      type TEXT NOT NULL,
+      company_name TEXT,
+      FOREIGN KEY (visitor_id) REFERENCES visitors(id)
+    )`);
+
+    // The dependents table is now linked to the visits table
+    db.run(`CREATE TABLE IF NOT EXISTS dependents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      age INTEGER,
+      visit_id INTEGER NOT NULL,
+      FOREIGN KEY (visit_id) REFERENCES visits(id)
+    )`);
+  }
+});
+
+// Use the new modular router for the /register-visitor endpoint.
+app.use("/", createRegistrationRouter(db));
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
