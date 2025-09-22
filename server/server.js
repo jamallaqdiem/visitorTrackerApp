@@ -2,16 +2,19 @@ const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const path = require("path");
 const app = express();
 const PORT = 3001;
 
 // Import the modular registration router
 const createRegistrationRouter = require("./auth/registration");
-
+const createVisitorsRouter = require("./routes/visitors");
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Connect to SQLite database
 const db = new sqlite3.Database("database.db", (err) => {
@@ -55,6 +58,7 @@ const db = new sqlite3.Database("database.db", (err) => {
 
 // Use the new modular router for the /register-visitor endpoint.
 app.use("/", createRegistrationRouter(db));
+app.use("/", createVisitorsRouter(db));
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

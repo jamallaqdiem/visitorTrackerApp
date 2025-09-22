@@ -64,7 +64,7 @@ function createRegistrationRouter(db) {
       company_name,
       additional_dependents,
     } = req.body;
-    const photo_path = req.file ? req.file.path : null;
+    const photo_path = req.file ? path.basename(req.file.path) : null;
 
     db.serialize(() => {
       db.run("BEGIN TRANSACTION;");
