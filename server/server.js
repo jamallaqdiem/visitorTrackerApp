@@ -11,6 +11,7 @@ const createRegistrationRouter = require("./auth/registration");
 const createVisitorsRouter = require("./routes/visitors");
 const createLoginRouter = require ("./routes/login")
 const createUpdateVisitorRouter = require ("./routes/update_visitor_details")
+const createLogoutRouter= require ("./routes/logout")
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
@@ -24,7 +25,7 @@ const db = new sqlite3.Database("database.db", (err) => {
     console.error(err.message);
   } else {
     console.log("Connected to the database.");
-    // This is the new, clean visitors table
+    // This is the visitors table
     db.run(`CREATE TABLE IF NOT EXISTS visitors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       first_name TEXT NOT NULL,
@@ -47,7 +48,7 @@ const db = new sqlite3.Database("database.db", (err) => {
       FOREIGN KEY (visitor_id) REFERENCES visitors(id)
     )`);
 
-    // The dependents table is now linked to the visits table
+    // The dependents table is linked to the visits table
     db.run(`CREATE TABLE IF NOT EXISTS dependents (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       full_name TEXT NOT NULL,
@@ -62,6 +63,7 @@ app.use("/", createRegistrationRouter(db));
 app.use("/", createVisitorsRouter(db));
 app.use("/", createLoginRouter(db));
 app.use ("/", createUpdateVisitorRouter(db));
+app.use("/", createLogoutRouter(db));
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
