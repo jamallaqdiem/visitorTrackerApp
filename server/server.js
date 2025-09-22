@@ -6,9 +6,11 @@ const path = require("path");
 const app = express();
 const PORT = 3001;
 
-// Import the modular registration router
+
 const createRegistrationRouter = require("./auth/registration");
 const createVisitorsRouter = require("./routes/visitors");
+const createLoginRouter = require ("./routes/login")
+const createUpdateVisitorRouter = require ("./routes/update_visitor_details")
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
@@ -56,9 +58,10 @@ const db = new sqlite3.Database("database.db", (err) => {
   }
 });
 
-// Use the new modular router for the /register-visitor endpoint.
 app.use("/", createRegistrationRouter(db));
 app.use("/", createVisitorsRouter(db));
+app.use("/", createLoginRouter(db));
+app.use ("/", createUpdateVisitorRouter(db));
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
