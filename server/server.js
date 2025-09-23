@@ -12,6 +12,7 @@ const createVisitorsRouter = require("./routes/visitors");
 const createLoginRouter = require ("./routes/login")
 const createUpdateVisitorRouter = require ("./routes/update_visitor_details")
 const createLogoutRouter= require ("./routes/logout")
+const createBanVisitorRouter= require ("./routes/ban")
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
@@ -64,6 +65,7 @@ app.use("/", createVisitorsRouter(db));
 app.use("/", createLoginRouter(db));
 app.use ("/", createUpdateVisitorRouter(db));
 app.use("/", createLogoutRouter(db));
+app.use("/", createBanVisitorRouter(db));
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
