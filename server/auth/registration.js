@@ -12,7 +12,7 @@ function createRegistrationRouter(db,upload) {
 
 
   // Handle visitor registration
-  router.post("/", upload.single("photo"), (req, res) => {
+  router.post("/register-visitor", upload.single("photo"), (req, res) => {
     const {
       first_name,
       last_name,
