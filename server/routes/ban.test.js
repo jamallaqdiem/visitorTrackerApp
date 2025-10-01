@@ -40,7 +40,7 @@ describe('POST /ban-visitor/:id', () => {
   test('should successfully ban an existing visitor and return 200', async () => {
     // Insert a sample visitor
     const visitorId = await new Promise((resolve, reject) => {
-      mockDb.run(`INSERT INTO visitors (first_name) VALUES ('Jane')`, function(err) {
+      mockDb.run(`INSERT INTO visitors (first_name) VALUES ('Jamal')`, function(err) {
         if (err) return reject(err);
         resolve(this.lastID);
       });
@@ -49,9 +49,9 @@ describe('POST /ban-visitor/:id', () => {
     const response = await request(app).post(`/ban-visitor/${visitorId}`);
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', `Visitor ${visitorId} has been banned.`);
+    expect(response.body).toHaveProperty('message', `Visitor has been banned.`);
 
-    // Verify the visitor's status in the database
+    // Verifying the visitor's status in the database
     const visitor = await new Promise((resolve, reject) => {
       mockDb.get(`SELECT is_banned FROM visitors WHERE id = ?`, [visitorId], (err, row) => {
         if (err) return reject(err);

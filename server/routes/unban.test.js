@@ -43,7 +43,7 @@ describe('POST /unban-visitor/:id', () => {
   test('should successfully unban a visitor with the correct password', async () => {
     // Insert a sample banned visitor
     const visitorId = await new Promise((resolve, reject) => {
-      mockDb.run(`INSERT INTO visitors (first_name, is_banned) VALUES ('Jane', 1)`, function(err) {
+      mockDb.run(`INSERT INTO visitors (first_name, is_banned) VALUES ('Jamal', 1)`, function(err) {
         if (err) return reject(err);
         resolve(this.lastID);
       });
@@ -54,7 +54,7 @@ describe('POST /unban-visitor/:id', () => {
       .send({ password: "test_password" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', `Visitor ${visitorId} has been unbanned.`);
+    expect(response.body).toHaveProperty('message', `Visitor has been unbanned successfully.`);
 
     // Verify the visitor's status in the database
     const visitor = await new Promise((resolve, reject) => {
@@ -69,7 +69,7 @@ describe('POST /unban-visitor/:id', () => {
   test('should return 403 for an incorrect password', async () => {
     // Insert a sample banned visitor
     const visitorId = await new Promise((resolve, reject) => {
-      mockDb.run(`INSERT INTO visitors (first_name, is_banned) VALUES ('Jane', 1)`, function(err) {
+      mockDb.run(`INSERT INTO visitors (first_name, is_banned) VALUES ('Jamal', 1)`, function(err) {
         if (err) return reject(err);
         resolve(this.lastID);
       });

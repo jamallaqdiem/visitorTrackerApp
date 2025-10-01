@@ -15,10 +15,9 @@ function createSearchVisitorsRouter(db) {
     if (!searchTerm) {
       return res.status(400).json({ message: "Search term 'name' is required." });
     }
-    const likeTerm = `%${searchTerm}%`;
 
-    // SQL query to find the most recent visit for a visitor by name
-    const query = `
+    const searchTerms = searchTerm.split(' ');
+    let query = `
       SELECT
         T1.id,
         T1.first_name,
@@ -37,11 +36,19 @@ function createSearchVisitorsRouter(db) {
         FROM visits
       ) AS T2 ON T1.id = T2.visitor_id AND T2.rn = 1
       LEFT JOIN dependents AS T3 ON T2.id = T3.visit_id
-      WHERE T1.first_name LIKE ? OR T1.last_name LIKE ?
-      GROUP BY T1.id
-    `;
+      WHERE `;
+    
+    // Add conditions for each search term
+    const likeTerms = [];
+    const conditions = searchTerms.map(term => {
+      likeTerms.push(`%${term}%`);
+      return `(T1.first_name LIKE ? OR T1.last_name LIKE ?)`;
+    });
 
-    db.all(query, [likeTerm, likeTerm], (err, rows) => {
+    query += conditions.join(' AND ');
+    query += ` GROUP BY T1.id`;
+
+    db.all(query, likeTerms.flatMap(term => [term, term]), (err, rows) => {
       if (err) {
         console.error("SQL Error in visitor-search:", err.message);
         return res.status(500).json({ error: err.message });
@@ -59,7 +66,7 @@ function createSearchVisitorsRouter(db) {
         
         return {
           ...row,
-          photo: row.photo_path
+          photo_path: row.photo_path
             ? `${req.protocol}://${req.get("host")}/${row.photo_path}`
             : null,
           dependents: dependentsData,

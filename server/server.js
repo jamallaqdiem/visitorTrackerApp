@@ -16,6 +16,7 @@ const createLogoutRouter = require("./routes/logout");
 const createBanVisitorRouter = require("./routes/ban");
 const createUnbanVisitorRouter = require("./routes/unban");
 const createExportRouter = require("./routes/export_visitor_data");
+const createSearchVisitorsRouter = require("./routes/search_visitors");
 
 // Middleware setup
 app.use(cors());
@@ -24,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Serve static images from the 'uploads' directory
-app.use("/uploads", express.static("uploads"));
+
 
 // Ensure the uploads directory exists
 const uploadsDir = "uploads";
@@ -113,6 +114,7 @@ app.use("/", createLogoutRouter(db));
 app.use("/", createBanVisitorRouter(db));
 app.use("/", createUnbanVisitorRouter(db));
 app.use("/", createExportRouter(db));
+app.use("/", createSearchVisitorsRouter(db)); 
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
