@@ -1,4 +1,5 @@
 const express = require("express");
+require('dotenv').config();
 
 /**
  * Creates and configures a router for handling visitor unbanning.
@@ -30,12 +31,12 @@ function createUnbanVisitorRouter(db) {
         return res.status(500).json({ error: err.message });
       }
 
-      // Check if any rows were actually changed (i.e., the visitor ID existed)
+      // Check if any rows were actually changed (... the visitor ID existed)
       if (this.changes === 0) {
         return res.status(404).json({ message: "Visitor not found." });
       }
 
-      res.status(200).json({ message: `Visitor ${id} has been unbanned.` });
+      res.status(200).json({ message: `Visitor has been unbanned successfully.` });
     });
   });
 

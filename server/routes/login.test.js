@@ -11,7 +11,7 @@ mockDb.serialize(() => {
     first_name TEXT,
     last_name TEXT,
     photo_path TEXT,
-    is_banned BOOLEAN
+    is_banned
   )`);
   mockDb.run(`CREATE TABLE visits (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,10 +65,10 @@ describe('POST /login', () => {
   test('should successfully log in an existing visitor and return 200', async () => {
     // Insert a sample visitor and visit record
     await new Promise((resolve, reject) => {
-      mockDb.run(`INSERT INTO visitors (first_name, last_name, is_banned) VALUES ('Jane', 'Doe', 0)`, function(err) {
+      mockDb.run(`INSERT INTO visitors (first_name, last_name, is_banned) VALUES ('Jamal', 'Laqdiem', 0)`, function(err) {
         if (err) return reject(err);
         const visitorId = this.lastID;
-        mockDb.run(`INSERT INTO visits (visitor_id, entry_time, phone_number, unit, type) VALUES (?, ?, '123-456-7890', '101', 'Visitor')`, [visitorId, new Date().toISOString()], (err) => {
+        mockDb.run(`INSERT INTO visits (visitor_id, entry_time, phone_number, unit, type) VALUES (?, ?, '07777890', '101', 'Visitor')`, [visitorId, new Date().toISOString()], (err) => {
           if (err) return reject(err);
           resolve(visitorId);
         });

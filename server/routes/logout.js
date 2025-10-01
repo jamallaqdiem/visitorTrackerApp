@@ -15,13 +15,8 @@ function createLogoutRouter(db) {
     const exit_time = new Date().toISOString();
 
     // Find the single active visit to update for this visitor
-    const findSql = `
-      SELECT id FROM visits
-      WHERE visitor_id = ? AND exit_time IS NULL
-      ORDER BY entry_time DESC
-      LIMIT 1
-    `;
-
+    const findSql =
+      "SELECT T1.id AS visit_id, T2.first_name, T2.last_name FROM visits T1 JOIN visitors T2 ON T1.visitor_id = T2.id WHERE T1.visitor_id = ? AND T1.exit_time IS NULL ORDER BY T1.entry_time DESC LIMIT 1";
     db.get(findSql, [id], (err, row) => {
       if (err) {
         console.error("SQL Error in exit-visitor:", err.message);
@@ -37,12 +32,16 @@ function createLogoutRouter(db) {
 
       // Now, update the specific visit using its ID
       const updateSql = `UPDATE visits SET exit_time = ? WHERE id = ?`;
-      db.run(updateSql, [exit_time, row.id], function (err) {
+      db.run(updateSql, [exit_time, row.visit_id], function (err) {
         if (err) {
           console.error("SQL Error in exit-visitor:", err.message);
           return res.status(500).json({ error: err.message });
         }
-        res.status(200).json({ message: `Visitor ${id} has been signed out.` });
+        // Use the full name retrieved from the database
+        const fullName = `${row.first_name} ${row.last_name}`;
+        res
+          .status(200)
+          .json({ message: `${fullName} has been successfully signed out.` });
       });
     });
   });

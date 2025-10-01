@@ -26,9 +26,7 @@ function createUpdateVisitorRouter(db) {
         .status(400)
         .json({ message: "Visitor ID is required for re-registration." });
     }
-
-    // Use a transaction for consistency
-    db.serialize(() => {
+    // Use a transaction
       db.run("BEGIN TRANSACTION;");
 
       // First, verify the visitor ID exists in the system
@@ -102,7 +100,7 @@ function createUpdateVisitorRouter(db) {
                   .then(() => {
                     db.run("COMMIT;");
                     res.status(201).json({
-                      message: "Visitor re-registered successfully!",
+                      message: "Visitor Updated Successfully!",
                       id: newVisitId,
                     });
                   })
@@ -114,21 +112,20 @@ function createUpdateVisitorRouter(db) {
               } else {
                 db.run("COMMIT;");
                 res.status(201).json({
-                  message: "Visitor re-registered successfully!",
+                  message: "Visitor Updated Successfully!",
                   id: newVisitId,
                 });
               }
             } else {
               db.run("COMMIT;");
               res.status(201).json({
-                message: "Visitor re-registered successfully!",
+                message: "Visitor Updated Successfully!",
                 id: newVisitId,
               });
             }
           }
         );
       });
-    });
   });
 
   return router;

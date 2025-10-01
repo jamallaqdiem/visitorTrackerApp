@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const multer = require("multer");
 
 /**
  * Creates and configures a router for handling new visitor registrations.
@@ -7,9 +8,8 @@ const path = require("path");
  * @param {object} db - The SQLite database instance.
  * @returns {express.Router} - An Express router with the registration endpoint.
  */
-function createRegistrationRouter(db,upload) {
+function createRegistrationRouter(db, upload) {
   const router = express.Router();
-
 
   // Handle visitor registration
   router.post("/register-visitor", upload.single("photo"), (req, res) => {
@@ -23,108 +23,115 @@ function createRegistrationRouter(db,upload) {
       company_name,
       additional_dependents,
     } = req.body;
-    const photo_path = req.file ? path.basename(req.file.path) : null;
+    const photo_path = req.file
+      ? `uploads/${path.basename(req.file.path)}`
+      : null;
+    // SQL to check if a visitor with the same full name exists
+    const checkSql = `SELECT id FROM visitors WHERE first_name = ? AND last_name = ?`;
 
-    db.serialize(() => {
-      db.run("BEGIN TRANSACTION;");
+    db.get(checkSql, [first_name, last_name], (err, row) => {
+      if (err) {
+        console.error("SQL Error during duplicate check:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
 
-      const visitorSql = `INSERT INTO visitors (first_name, last_name, photo_path) VALUES (?, ?, ?)`;
-      db.run(visitorSql, [first_name, last_name, photo_path], function (err) {
-        if (err) {
-          db.run("ROLLBACK;");
-          return res.status(500).json({ error: err.message });
-        }
-        const visitorId = this.lastID;
+      // If a row is found, it means the visitor already exists.
+      if (row) {
+        const message = `A visitor named ${first_name} ${last_name} already exists . Please use the search bar to log them in.`;
+        return res.status(409).json({ message }); // 409 Conflict status
+      }
 
-        const visitsSql = `
+        db.run("BEGIN TRANSACTION;");
+
+        const visitorSql = `INSERT INTO visitors (first_name, last_name, photo_path) VALUES (?, ?, ?)`;
+        db.run(visitorSql, [first_name, last_name, photo_path], function (err) {
+          if (err) {
+            db.run("ROLLBACK;");
+            return res.status(500).json({ error: err.message });
+          }
+          const visitorId = this.lastID;
+
+          const visitsSql = `
           INSERT INTO visits (
             visitor_id, entry_time, phone_number, unit, reason_for_visit, type, company_name
           ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-        const entry_time = new Date().toISOString();
-        db.run(
-          visitsSql,
-          [
-            visitorId,
-            entry_time,
-            phone_number,
-            unit,
-            reason_for_visit,
-            type,
-            company_name,
-          ],
-          function (err) {
-            if (err) {
-              db.run("ROLLBACK;");
-              return res.status(500).json({ error: err.message });
-            }
-            const visitId = this.lastID;
-
-            if (additional_dependents) {
-              let dependentsArray = [];
-              try {
-                dependentsArray = JSON.parse(additional_dependents);
-              } catch (parseError) {
+          const entry_time = new Date().toISOString();
+          db.run(
+            visitsSql,
+            [
+              visitorId,
+              entry_time,
+              phone_number,
+              unit,
+              reason_for_visit,
+              type,
+              company_name,
+            ],
+            function (err) {
+              if (err) {
                 db.run("ROLLBACK;");
-                return res
-                  .status(400)
-                  .json({ error: "Invalid dependents JSON format." });
+                return res.status(500).json({ error: err.message });
               }
+              const visitId = this.lastID;
 
-              if (dependentsArray.length > 0) {
-                const dependentPromises = dependentsArray.map(
-                  (dependent) =>
-                    new Promise((resolve, reject) => {
-                      db.run(
-                        `INSERT INTO dependents (full_name, age, visit_id) VALUES (?, ?, ?)`,
-                        [dependent.full_name, dependent.age, visitId],
-                        function (err) {
-                          if (err) reject(err);
-                          else resolve();
-                        }
-                      );
-                    })
-                );
+              if (additional_dependents) {
+                let dependentsArray = [];
+                try {
+                  dependentsArray = JSON.parse(additional_dependents);
+                } catch (parseError) {
+                  db.run("ROLLBACK;");
+                  return res
+                    .status(400)
+                    .json({ error: "Invalid dependents JSON format." });
+                }
 
-                Promise.all(dependentPromises)
-                  .then(() => {
-                    db.run("COMMIT;");
-                    res
-                      .status(201)
-                      .json({
+                if (dependentsArray.length > 0) {
+                  const dependentPromises = dependentsArray.map(
+                    (dependent) =>
+                      new Promise((resolve, reject) => {
+                        db.run(
+                          `INSERT INTO dependents (full_name, age, visit_id) VALUES (?, ?, ?)`,
+                          [dependent.full_name, dependent.age, visitId],
+                          function (err) {
+                            if (err) reject(err);
+                            else resolve();
+                          }
+                        );
+                      })
+                  );
+
+                  Promise.all(dependentPromises)
+                    .then(() => {
+                      db.run("COMMIT;");
+                      res.status(201).json({
                         message: "Visitor registered successfully!",
                         id: visitorId,
                       });
-                  })
-                  .catch((promiseErr) => {
-                    db.run("ROLLBACK;");
-                    res
-                      .status(500)
-                      .json({
+                    })
+                    .catch((promiseErr) => {
+                      db.run("ROLLBACK;");
+                      res.status(500).json({
                         error: "Failed to save dependents.",
                         detail: promiseErr.message,
                       });
-                  });
-              } else {
-                db.run("COMMIT;");
-                res
-                  .status(201)
-                  .json({
+                    });
+                } else {
+                  db.run("COMMIT;");
+                  res.status(201).json({
                     message: "Visitor registered successfully!",
                     id: visitorId,
                   });
-              }
-            } else {
-              db.run("COMMIT;");
-              res
-                .status(201)
-                .json({
+                }
+              } else {
+                db.run("COMMIT;");
+                res.status(201).json({
                   message: "Visitor registered successfully!",
                   id: visitorId,
                 });
+              }
             }
-          }
-        );
-      });
+          );
+        });
     });
   });
 
@@ -134,7 +141,7 @@ function createRegistrationRouter(db,upload) {
       // A Multer error occurred (e.g., file too large).
       return res.status(400).json({ error: err.message });
     } else if (err) {
-      // A custom error occurred (e.g., our fileFilter rejection).
+      // A custom error occurred
       return res.status(400).json({ error: err.message });
     }
     next();

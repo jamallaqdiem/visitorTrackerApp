@@ -65,7 +65,7 @@ describe('POST /update-visitor-details', () => {
   test('should successfully update visitor details and return 201', async () => {
     // Insert a sample visitor
     const visitorId = await new Promise((resolve, reject) => {
-      mockDb.run(`INSERT INTO visitors (first_name, last_name, is_banned) VALUES ('Jane', 'Doe', 0)`, function(err) {
+      mockDb.run(`INSERT INTO visitors (first_name, last_name, is_banned) VALUES ('Jamal', 'Laqdiem', 0)`, function(err) {
         if (err) return reject(err);
         resolve(this.lastID);
       });
@@ -73,7 +73,7 @@ describe('POST /update-visitor-details', () => {
 
     const updateData = {
       id: visitorId,
-      phone_number: "987-654-3210",
+      phone_number: "07777210",
       unit: "202",
       reason_for_visit: "Meeting",
       type: "Visitor",
@@ -85,14 +85,14 @@ describe('POST /update-visitor-details', () => {
       .send(updateData);
 
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('message', 'Visitor re-registered successfully!');
+    expect(response.body).toHaveProperty('message', 'Visitor Updated Successfully!');
     expect(response.body).toHaveProperty('id');
   });
 
   test('should return 404 for a non-existent visitor ID', async () => {
     const updateData = {
       id: 999, // Non-existent ID
-      phone_number: "987-654-3210",
+      phone_number: "07777210",
       unit: "202",
       reason_for_visit: "Meeting",
       type: "Visitor",
