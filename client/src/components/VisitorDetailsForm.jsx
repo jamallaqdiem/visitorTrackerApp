@@ -79,7 +79,7 @@ const VisitorDetailsForm = ({
             className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50"
             disabled={!selectedVisitor.id}
           >
-            Export
+            Export Visit History (CSV)
           </button>
           <div className="flex flex-col items-center w-full mt-6">
             <div className="w-60 h-60 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center border-4 border-gray-300 shadow-inner">
@@ -273,7 +273,7 @@ const VisitorDetailsForm = ({
           }`}
           disabled={isBanned}
         >
-          Save & Sign In
+          Save Updates & Sign In
         </button>
 
         <button
