@@ -1,12 +1,52 @@
-# React + Vite
+                                                             Visitor Tracking Client Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the frontend client built with React and Vite, styled using Tailwind CSS. This application is responsible for the user interface, handling visitor registration, real-time status display, and triggering all necessary API calls to the backend server.
 
-Currently, two official plugins are available:
+🚀 Local Development Setup
+To get the client application running locally:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. Prerequisites
+Ensure the backend server is running first (npm run start in the /server directory) to avoid connectivity issues. The client is configured to expect the backend API at the address defined.
 
-## Expanding the ESLint configuration
+2. Installation
+Navigate into this /client directory and install the necessary dependencies:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+npm install
+
+3. Run the Application
+Start the Vite development server. This command will typically launch the application on http://localhost:5173.
+
+npm run dev
+
+🛠️ Technology Stack
+This application is built upon a modern, powerful stack:
+
+React: Core library for building the user interface components.
+
+Vite: Next-generation frontend tooling for fast development and bundling.
+
+Tailwind CSS: Utility-first CSS framework used for all styling and responsive design.
+
+📂 Key Component Structure
+
+The frontend application uses a component-based architecture for modularity.
+
+src/App.jsx: The main application file. It manages the primary application state, handles routing between views (e.g., the registration page and the current visitors dashboard), and renders the main components.
+
+src/components/VisitorDetailsForm.jsx: Manages the complex form logic for visitor registration, including handling dependent/contractor/professional fields, photo uploads, and submitting data to the /api/register endpoint.
+
+src/components/VisitorStatusList.jsx: Component responsible for fetching and displaying the real-time list of visitors currently on-site, typically using a polling mechanism or WebSockets (if implemented) to connect to the backend's data stream.
+
+Other Components: Contains modular UI elements like buttons, modals (for Ban/Unban confirmation), and search/filtering logic.
+
+🎨 Styling
+
+All user interface styling is handled using Tailwind CSS utility classes. This ensures consistency and responsive design across all devices. No custom CSS files are used, simplifying the styling workflow.
+
+📡 API Interaction
+
+All communication with the backend is handled asynchronously within the components or custom React Hooks.
+
+The primary API endpoint used for reading real-time data is GET /api/visitors.
+
+Sensitive actions like Ban/Unban utilize the confirmation modal (as seen in the screenshots) to pass the administrative password to the respective POST /api/ban/:id or POST /api/unban/:id endpoints.
