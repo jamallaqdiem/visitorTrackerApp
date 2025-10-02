@@ -9,15 +9,13 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "init-tailwind": "tailwindcss init -p",
-    "test": "vitest"
+    "init-tailwind": "tailwindcss init -p"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@testing-library/react": "^14.2.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
@@ -26,11 +24,9 @@
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
-    "jsdom": "^24.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "vite": "^4.4.5",
-    "vitest": "^3.2.4"
+    "vite": "^4.4.5"
   },
   "browserslist": {
     "production": [
