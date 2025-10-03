@@ -34,13 +34,6 @@ const VisitorsDashboard = ({
               disabled={loadingDashboard}
             />
           </div>
-          <button
-            type="button"
-            className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-            disabled={true} // Disable button to emphasize live search 
-          >
-            Search
-          </button>
         </div>
 
         {/* Notification Area for Search Status */}
