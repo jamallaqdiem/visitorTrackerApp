@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { CameraIcon, PersonIcon, PhoneIcon } from "./IconComponents";
 
 const VisitorRegistrationForm = ({
@@ -16,8 +16,31 @@ const VisitorRegistrationForm = ({
   loadingRegistration,
   handleCancelRegistration,
 }) => {
+  const fileInputRef = useRef(null);
+  const [showPhotoChoice, setShowPhotoChoice] = useState(false);
+  const [captureMode, setCaptureMode] = useState(null);
+  const [inputKey, setInputKey] = useState(0);
   const isError = messageType === "error" && message;
   const isSuccess = messageType === "success" && message;
+
+  const handlePhotoChoice = (mode) => {
+    // 1. Determine the required capture attribute value
+    let newCaptureMode = null;
+    if (mode === "camera") {
+      newCaptureMode = "user";
+    }
+    // 2. Update state to trigger re-render of the input element with the new attributes
+    setCaptureMode(newCaptureMode);
+    setInputKey((prevKey) => prevKey + 1); 
+
+    setTimeout(() => {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+      setShowPhotoChoice(false); 
+    }, 50);
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-blue-100">
       <h2 className="text-3xl font-bold text-purple-700 mb-6 text-center">
@@ -143,13 +166,15 @@ const VisitorRegistrationForm = ({
 
         {/* Photo and Dependents Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t">
-          
-          {/* Photo Upload */}
+          {/* Photo Upload */}         {" "}
           <div className="md:col-span-1 flex flex-col items-center space-y-3">
+                       {" "}
             <label className="text-sm font-medium text-gray-700">
-              Visitor Photo (Optional)
+                 Visitor Photo 
             </label>
+             
             <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-inner">
+                           {" "}
               {photoPreviewUrl ? (
                 <img
                   src={photoPreviewUrl}
@@ -160,22 +185,54 @@ const VisitorRegistrationForm = ({
                 <PersonIcon className="w-16 h-16 text-gray-500" />
               )}
             </div>
-            <label
-              htmlFor="photo-upload"
+                       {/* 1. Button to show/hide the choice options */}
+            <button
+              type="button"
+              onClick={() => setShowPhotoChoice((prev) => !prev)}
               className="flex items-center justify-center space-x-2 px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600 cursor-pointer transition-colors"
             >
               <CameraIcon className="w-5 h-5" />
-              <span>Take/Upload Photo</span>
-            </label>
+              <span>
+                {showPhotoChoice ? "Cancel Choice" : "Select Photo Source"}
+              </span>
+            </button>
             <input
               id="photo-upload"
+              key={inputKey}
               type="file"
               accept="image/*"
+              {...(captureMode ? { capture: captureMode } : {})}
+              ref={fileInputRef}
               onChange={handlePhotoChange}
-              className="hidden"
+              style={{
+                position: "absolute",
+                width: "0px",
+                height: "0px",
+                opacity: 0,
+                pointerEvents: "none",
+              }}
             />
+            {/* 3. Photo Choice Buttons - Visible when state is true */}
+            {showPhotoChoice && (
+              <div className="flex justify-center gap-2 w-full p-2 bg-purple-50 rounded-lg shadow-inner border border-purple-200">
+                <button
+                  type="button"
+                  onClick={() => handlePhotoChoice("camera")}
+                  className="flex-1 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Take Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePhotoChoice("upload")}
+                  className="flex-1 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Upload File
+                </button>
+              </div>
+            )}
+                     {" "}
           </div>
-
           {/* Additional Dependents */}
           <div className="md:col-span-2 space-y-3">
             <h4 className="text-lg font-semibold text-gray-800">
