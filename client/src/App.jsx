@@ -14,7 +14,7 @@ const initialRegistrationForm = {
   unit: "",
   reasonForVisit: "",
   visitorType: "visitor",
-  company_name: "",
+  companyName: "",
   photo: null,
 };
 
@@ -59,7 +59,7 @@ function App() {
     setTimeout(() => setMessage(""), 5000);
   };
 
-  // --- API: Fetch Currently Signed-In Visitors (5-second refresh logic) ---
+  // --- API: Fetch Currently Signed-In Visitors ---
   const fetchVisitors = useCallback(async () => {
     // Only show loading indicator initially or when explicitly triggered
     if (visitors.length === 0) setIsLoading(true);
@@ -145,7 +145,7 @@ function App() {
     // Set a new timeout
     debounceTimeoutRef.current = setTimeout(() => {
       handleVisitorSearch(term);
-    }, 600); // 500ms debounce
+    }, 600);
   }); 
 
   // --- Visitor Selection Handler ---
@@ -162,11 +162,10 @@ function App() {
       // Ensure dependents is an array, parsing if stored as JSON string
       additional_dependents:
         visitor.dependents && Array.isArray(visitor.dependents)
-          ? visitor.dependents // Use the new, fetched array.
+          ? visitor.dependents 
           : (typeof visitor.additional_dependents === "string"
-              ? JSON.parse(visitor.additional_dependents) // Fallback for old JSON string format
+              ? JSON.parse(visitor.additional_dependents) 
               : visitor.additional_dependents) || [],
-      // FIX ENDS HERE
     });
     setSearchResults([]);
     setSearchTerm("");
@@ -174,7 +173,7 @@ function App() {
     showNotification("Visitor details loaded.", "blue");
   };
 
-  // --- Cancel/Back to Dashboard Handler ---
+  // Cancel/Back to Dashboard Handler 
   const handleCancelAction = () => {
     setSelectedVisitor(null);
     setSearchResults([]);
@@ -183,7 +182,7 @@ function App() {
     showNotification("Action cancelled. Back to dashboard.", "blue");
   };
 
-  // --- Registration Handlers (Proxy functions for component) ---
+  // Handle Registration Handlers
   const handleRegInputChange = (e) => {
     const { name, value } = e.target;
     setRegFormData((prev) => ({ ...prev, [name]: value }));
@@ -232,7 +231,7 @@ function App() {
     formData.append("unit", regFormData.unit);
     formData.append("reason_for_visit", regFormData.reasonForVisit);
     formData.append("type", regFormData.visitorType);
-    formData.append("company_name", regFormData.company_name);
+    formData.append("company_name", regFormData.companyName);
 
     if (regFormData.photo) {
       formData.append("photo", regFormData.photo);
@@ -259,16 +258,13 @@ function App() {
 
       setMessage("Visitor logged in successfully!");
       setMessageType("success");
-
-      setTimeout(() => {
-        setMessage(null);
-      }, 3000);
-
       // Reset form state and UI
+       setTimeout(() => {
       setRegFormData(initialRegistrationForm);
       setRegDependents([]);
       setPhotoPreviewUrl(null);
       handleCancelAction(); // Go back to dashboard
+       }, 4000);
 
       fetchVisitors(); // Refresh the list
     } catch (err) {
@@ -281,7 +277,7 @@ function App() {
 
   // --- VisitorDetailsForm Handlers ---
 
-  // 1. Log In (Check-in existing visitor with minimal details)
+  // 1.Handle Log In
   const handleLogin = async (id) => {
     if (!id || !selectedVisitor) return;
 
@@ -302,10 +298,8 @@ function App() {
         `${selectedVisitor.first_name} is already signed in! Cannot log in again.`,
         "error"
       );
-      return; // Stop execution if they are already active
+      return;
     }
-
-    // NOTE: Using a custom modal is better, but following the mandate to avoid alert(), we use window.confirm() for now.
 
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
@@ -322,16 +316,16 @@ function App() {
 
       showNotification(result.message, "success");
       setTimeout(() => {
-        handleCancelAction(); // Go back to dashboard
+        handleCancelAction(); 
         fetchVisitors();
-      }, 3000); // Wait 2 seconds before navigating
+      }, 3000); 
     } catch (err) {
       console.error("Login Error:", err.message);
       showNotification(`Login Failed: ${err.message}`, "error");
     }
   };
 
-  // 2. Update Details & Log In (Re-register)
+  // 2.Handle Update Details & Log In (Re-register)
   const handleUpdateAndLogin = async () => {
     if (!selectedVisitor) return;
 
@@ -353,9 +347,8 @@ function App() {
         "error"
       );
 
-      return; // Stop execution if they are already active
+      return;
     }
-    // --- FIX: Filter out any dependent entries where the name is empty or just whitespace ---
     const cleanedDependents = (editFormData.additional_dependents || [])
         .filter(dep => dep.full_name && dep.full_name.trim() !== '');
     const dataToSend = {
@@ -385,7 +378,7 @@ function App() {
         result.message 
       );
       setTimeout(() => {
-        handleCancelAction(); // Go back to dashboard
+        handleCancelAction();
         fetchVisitors();
       }, 2000);
     } catch (err) {
@@ -394,10 +387,9 @@ function App() {
     }
   };
 
-  // 3. Ban Visitor
+  // 3.Handle Ban Visitor
   const handleBan = async (id) => {
     if (!id) return;
-    // NOTE: Using a custom modal is better, but following the mandate to avoid alert(), we use window.confirm() for now.
 
     try {
       const response = await fetch(`${API_BASE_URL}/ban-visitor/${id}`, {
@@ -414,9 +406,9 @@ function App() {
       showNotification(result.message, "error");
       setSelectedVisitor((prev) => (prev ? { ...prev, is_banned: 1 } : null)); // Update local state
             setTimeout(() => {
-        handleCancelAction(); // Go back to dashboard
+        handleCancelAction();
         fetchVisitors();
-      }, 3000); // Wait 2 seconds before navigating
+      }, 3000);
       
     } catch (err) {
       console.error("Ban Error:", err.message);
@@ -429,7 +421,7 @@ function App() {
     setUnbanVisitorId(id);
     setUnbanPassword("");
     setShowPasswordModal(true);
-    setMessage(""); // Clear notification messages
+    setMessage(""); 
   };
 
   // 4. Unban (Modal Confirmation)
@@ -472,8 +464,6 @@ function App() {
   const handleExportData = () => {
     if (!selectedVisitor?.id) return;
     const url = `${API_BASE_URL}/export-visitors?id=${selectedVisitor.id}`;
-
-    // NOTE: This relies on the backend route to set the Content-Disposition header
     window.open(url, "_blank");
     showNotification(
       `Export initiated for Visitor ID: ${selectedVisitor.id}`,
@@ -496,7 +486,7 @@ function App() {
       }
 
       showNotification(result.message, "success");
-      fetchVisitors(); // Refresh the list
+      fetchVisitors(); 
     } catch (err) {
       console.error("Logout Error:", err.message);
       showNotification(`Logout Failed: ${err.message}`, "error");
