@@ -29,7 +29,7 @@ function createBanVisitorRouter(db) {
         return res.status(404).json({ message: "Visitor not found." });
       }
 
-      res.status(200).json({ message: `Visitor has been banned.` });
+      res.status(200).json({ message: `Visitor has been banned & sign it out.` });
     });
   });
 
