@@ -223,7 +223,35 @@ function App() {
     if (loadingRegistration) return;
 
     setLoadingRegistration(true);
+    // Check A visitor in database before registration
+    const { firstName, lastName } = regFormData;
+    const searchName = `${firstName} ${lastName}`;
 
+    if (searchName.trim().length > 1) {
+      try {
+        const encodedSearchTerm = encodeURIComponent(searchName);
+        const preCheckUrl = `${API_BASE_URL}/visitor-search?name=${encodedSearchTerm}`;
+
+        const preCheckResponse = await fetch(preCheckUrl);
+        const preCheckData = await preCheckResponse.json();
+
+        // 2. Check if a visitor was found
+        if (preCheckData && preCheckData.length > 0) {
+          setLoadingRegistration(false);
+          showNotification(
+            `${firstName} ${lastName} already exists. Please search and sign them in instead.`,
+            "error"
+          );
+          return;
+        }
+      } catch (err) {
+        console.warn(
+          "Pre-registration search failed:",
+          err.message,
+          "Proceeding with registration."
+        );
+      }
+    }
     const formData = new FormData();
     formData.append("first_name", regFormData.firstName);
     formData.append("last_name", regFormData.lastName);

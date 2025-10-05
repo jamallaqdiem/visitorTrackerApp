@@ -75,7 +75,7 @@ const VisitorsDashboard = ({
                     </span>
                   </div>
                   <button className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-                    Select & Log In
+                    Select
                   </button>
                 </div>
               ))}
