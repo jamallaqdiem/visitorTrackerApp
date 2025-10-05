@@ -256,7 +256,7 @@ function App() {
         throw new Error(result.message || "Failed to register new visitor.");
       }
 
-      setMessage("Visitor logged in successfully!");
+      setMessage("Visitor registered & signed in successfully!");
       setMessageType("success");
       // Reset form state and UI
       setTimeout(() => {
@@ -295,7 +295,7 @@ function App() {
 
     if (isAlreadySignedIn) {
       showNotification(
-        `${selectedVisitor.first_name} is already signed in! Cannot log in again.`,
+        `${selectedVisitor.first_name} is already signed in! Cannot sign in again.`,
         "error"
       );
       return;
@@ -331,7 +331,7 @@ function App() {
 
     if (selectedVisitor.is_banned === 1) {
       showNotification(
-        "Visitor is banned and cannot check in. Please unban first.",
+        "Visitor is banned and cannot sign in. Please unban first.",
         "error"
       );
       return;
@@ -372,7 +372,7 @@ function App() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Update and Login failed.");
+        throw new Error(result.message || "Update and sign failed.");
       }
 
       showNotification(result.message);
@@ -382,7 +382,7 @@ function App() {
       }, 2000);
     } catch (err) {
       console.error("Update & Login Error:", err.message);
-      showNotification(`Update & Login Failed: ${err.message}`, "error");
+      showNotification(`Update & sign Failed: ${err.message}`, "error");
     }
   };
 

@@ -89,7 +89,7 @@ function createLoginRouter(db) {
         };
 
         res.status(200).json({
-          message: "Visitor logged in successfully!",
+          message: "Visitor signed in successfully!",
           visitorData: visitorData,
         });
       });

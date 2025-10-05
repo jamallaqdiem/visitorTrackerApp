@@ -112,14 +112,14 @@ function createUpdateVisitorRouter(db) {
               } else {
                 db.run("COMMIT;");
                 res.status(201).json({
-                  message: "Visitor Updated Successfully!",
+                  message: "Visitor Updated Successfully & signed in!",
                   id: newVisitId,
                 });
               }
             } else {
               db.run("COMMIT;");
               res.status(201).json({
-                message: "Visitor Updated Successfully!",
+                message: "Visitor Updated Successfully & signed in!",
                 id: newVisitId,
               });
             }

@@ -304,7 +304,7 @@ const VisitorRegistrationForm = ({
               loadingRegistration || !formData.firstName || !formData.lastName
             }
           >
-            {loadingRegistration ? "Registering..." : "Register & Log In"}
+            {loadingRegistration ? "Registering..." : "Register & Sign In"}
           </button>
           <button
             type="button"
