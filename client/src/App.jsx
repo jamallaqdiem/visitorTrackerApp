@@ -146,7 +146,7 @@ function App() {
     debounceTimeoutRef.current = setTimeout(() => {
       handleVisitorSearch(term);
     }, 600);
-  }); 
+  });
 
   // --- Visitor Selection Handler ---
   const handleVisitorSelect = (visitor) => {
@@ -162,9 +162,9 @@ function App() {
       // Ensure dependents is an array, parsing if stored as JSON string
       additional_dependents:
         visitor.dependents && Array.isArray(visitor.dependents)
-          ? visitor.dependents 
+          ? visitor.dependents
           : (typeof visitor.additional_dependents === "string"
-              ? JSON.parse(visitor.additional_dependents) 
+              ? JSON.parse(visitor.additional_dependents)
               : visitor.additional_dependents) || [],
     });
     setSearchResults([]);
@@ -173,7 +173,7 @@ function App() {
     showNotification("Visitor details loaded.", "blue");
   };
 
-  // Cancel/Back to Dashboard Handler 
+  // Cancel/Back to Dashboard Handler
   const handleCancelAction = () => {
     setSelectedVisitor(null);
     setSearchResults([]);
@@ -259,12 +259,12 @@ function App() {
       setMessage("Visitor logged in successfully!");
       setMessageType("success");
       // Reset form state and UI
-       setTimeout(() => {
-      setRegFormData(initialRegistrationForm);
-      setRegDependents([]);
-      setPhotoPreviewUrl(null);
-      handleCancelAction(); // Go back to dashboard
-       }, 4000);
+      setTimeout(() => {
+        setRegFormData(initialRegistrationForm);
+        setRegDependents([]);
+        setPhotoPreviewUrl(null);
+        handleCancelAction(); // Go back to dashboard
+      }, 4000);
 
       fetchVisitors(); // Refresh the list
     } catch (err) {
@@ -316,9 +316,9 @@ function App() {
 
       showNotification(result.message, "success");
       setTimeout(() => {
-        handleCancelAction(); 
+        handleCancelAction();
         fetchVisitors();
-      }, 3000); 
+      }, 3000);
     } catch (err) {
       console.error("Login Error:", err.message);
       showNotification(`Login Failed: ${err.message}`, "error");
@@ -349,8 +349,9 @@ function App() {
 
       return;
     }
-    const cleanedDependents = (editFormData.additional_dependents || [])
-        .filter(dep => dep.full_name && dep.full_name.trim() !== '');
+    const cleanedDependents = (editFormData.additional_dependents || []).filter(
+      (dep) => dep.full_name && dep.full_name.trim() !== ""
+    );
     const dataToSend = {
       id: selectedVisitor.id,
       phone_number: editFormData.phone_number,
@@ -374,9 +375,7 @@ function App() {
         throw new Error(result.message || "Update and Login failed.");
       }
 
-      showNotification(
-        result.message 
-      );
+      showNotification(result.message);
       setTimeout(() => {
         handleCancelAction();
         fetchVisitors();
@@ -390,7 +389,9 @@ function App() {
   // 3.Handle Ban Visitor
   const handleBan = async (id) => {
     if (!id) return;
-
+    const isCurrentlySignedIn = visitors.some(
+      (activeVisitor) => activeVisitor.id === id
+    );
     try {
       const response = await fetch(`${API_BASE_URL}/ban-visitor/${id}`, {
         method: "POST",
@@ -402,14 +403,15 @@ function App() {
       if (!response.ok) {
         throw new Error(result.message || "Failed to ban visitor.");
       }
-
+      if (isCurrentlySignedIn) {
+        await handleVisitorLogout(id);
+      }
       showNotification(result.message, "error");
       setSelectedVisitor((prev) => (prev ? { ...prev, is_banned: 1 } : null)); // Update local state
-            setTimeout(() => {
+      setTimeout(() => {
         handleCancelAction();
         fetchVisitors();
       }, 3000);
-      
     } catch (err) {
       console.error("Ban Error:", err.message);
       showNotification(`Ban Failed: ${err.message}`, "error");
@@ -421,7 +423,7 @@ function App() {
     setUnbanVisitorId(id);
     setUnbanPassword("");
     setShowPasswordModal(true);
-    setMessage(""); 
+    setMessage("");
   };
 
   // 4. Unban (Modal Confirmation)
@@ -486,7 +488,7 @@ function App() {
       }
 
       showNotification(result.message, "success");
-      fetchVisitors(); 
+      fetchVisitors();
     } catch (err) {
       console.error("Logout Error:", err.message);
       showNotification(`Logout Failed: ${err.message}`, "error");
