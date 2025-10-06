@@ -3,6 +3,7 @@ import VisitorsDashboard from "./components/VisitorsDashboard";
 import VisitorDetailsForm from "./components/VisitorDetailsForm";
 import VisitorRegistrationForm from "./components/VisitorRegistrationForm";
 import PasswordModal from "./components/PasswordModal";
+import RecordMissedVisitModal from "./components/RecordMissedVisitModal";
 
 const API_BASE_URL = "http://localhost:3001";
 
@@ -48,6 +49,10 @@ function App() {
   const [unbanVisitorId, setUnbanVisitorId] = useState(null);
   const [unbanPassword, setUnbanPassword] = useState("");
   const [showUnbanPassword, setShowUnbanPassword] = useState(false);
+
+  // --- Record Missed Visit Modal State ---
+  const [showMissedVisitModal, setShowMissedVisitModal] = useState(false);
+  const [missedEntryTime, setMissedEntryTime] = useState("");
 
   // Debounce for live search
   const debounceTimeoutRef = useRef(null);
@@ -488,6 +493,50 @@ function App() {
       showNotification(`Unban Failed: ${err.message}`, "error");
       setUnbanPassword("");
     }
+  }; 
+
+// handle correcting the entry time
+  const handleRecordMissedVisitClick = () => {
+    if (!selectedVisitor) return; 
+    setMissedEntryTime("");
+    setShowMissedVisitModal(true);
+    setMessage("");
+  }; 
+
+  const confirmRecordMissedVisit = async () => {
+    const visitorId = selectedVisitor?.id;
+
+    if (!missedEntryTime) {
+      showNotification("Entry time is required.", "error");
+      return;
+    }
+
+    setShowMissedVisitModal(false);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/record-missed-visit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId,
+          pastEntryTime: new Date(missedEntryTime).toISOString(),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to record missed visit.");
+      }
+
+      showNotification(result.message, "success"); 
+      setTimeout(() => {
+        handleCancelAction(); // Go back to the dashboard after success
+      }, 3000);
+    } catch (err) {
+      console.error("Missed Visit Error:", err.message);
+      showNotification(`Missed Visit Failed: ${err.message}`, "error");
+    }
   };
 
   // 5. Export Data
@@ -591,6 +640,7 @@ function App() {
             handleUpdate={handleUpdateAndLogin}
             handleBan={handleBan}
             handleUnbanClick={handleUnbanClick}
+            handleRecordMissedVisitClick={handleRecordMissedVisitClick}
             handleCancelLogIn={handleCancelAction}
             message={message}
             messageType={messageType}
@@ -629,6 +679,15 @@ function App() {
         messageType={messageType}
         setShowPasswordModal={setShowPasswordModal}
       />
+
+      {/* Missed Visit Correction Modal (Always rendered but hidden by state) */}
+      <RecordMissedVisitModal
+        showModal={showMissedVisitModal}
+        setShowModal={setShowMissedVisitModal}
+        entryTime={missedEntryTime}
+        setEntryTime={setMissedEntryTime}
+        confirmAction={confirmRecordMissedVisit}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ const VisitorDetailsForm = ({
   message,
   messageType,
   handleCancelLogIn,
+  handleRecordMissedVisitClick
 }) => {
   if (!selectedVisitor) return null;
 
@@ -237,6 +238,12 @@ const VisitorDetailsForm = ({
         )}
       {/* Action Buttons */}
       <div className="flex flex-wrap justify-center gap-4 pt-8 border-t mt-8">
+<button
+    onClick={handleRecordMissedVisitClick}
+    className="w-full md:w-auto px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 transition-colors flex items-center justify-center"
+>
+    Correct Missed Entry
+</button>
         <button
           onClick={() => handleLogin(selectedVisitor.id)}
           className={`px-8 py-3 font-bold rounded-lg transition-all shadow-xl ${
