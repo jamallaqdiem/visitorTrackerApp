@@ -80,7 +80,7 @@ describe('POST /login', () => {
       .send({ id: 1 }); // We know the ID will be 1 from the mock insert
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Visitor logged in successfully!');
+    expect(response.body).toHaveProperty('message', 'Visitor signed in successfully!');
     expect(response.body).toHaveProperty('visitorData');
     expect(response.body.visitorData.id).toBe(1);
   });

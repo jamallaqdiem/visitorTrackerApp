@@ -49,7 +49,7 @@ describe('POST /ban-visitor/:id', () => {
     const response = await request(app).post(`/ban-visitor/${visitorId}`);
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', `Visitor has been banned.`);
+    expect(response.body).toHaveProperty('message', `Visitor has been banned & sign it out.`);
 
     // Verifying the visitor's status in the database
     const visitor = await new Promise((resolve, reject) => {

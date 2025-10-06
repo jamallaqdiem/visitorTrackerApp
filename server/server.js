@@ -17,6 +17,7 @@ const createBanVisitorRouter = require("./routes/ban");
 const createUnbanVisitorRouter = require("./routes/unban");
 const createExportRouter = require("./routes/export_visitor_data");
 const createSearchVisitorsRouter = require("./routes/search_visitors");
+const createMissedVisitRouter = require("./routes/record_missed_visit"); 
 
 // Middleware setup
 app.use(cors());
@@ -115,6 +116,7 @@ app.use("/", createBanVisitorRouter(db));
 app.use("/", createUnbanVisitorRouter(db));
 app.use("/", createExportRouter(db));
 app.use("/", createSearchVisitorsRouter(db)); 
+app.use("/", createMissedVisitRouter(db)); 
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
