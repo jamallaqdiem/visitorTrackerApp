@@ -4,7 +4,13 @@ import { SearchIcon, PersonIcon } from './IconComponents';
 // Function to format time for display
 const formatTime = (timeString) => {
   if (!timeString) return 'N/A';
-  return new Date(timeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  return new Date(timeString).toLocaleString([], { 
+    month: 'short', 
+    day: '2-digit',
+    hour: '2-digit', 
+    minute: '2-digit', 
+    hour12: true 
+  });
 };
 
 const VisitorsDashboard = ({
