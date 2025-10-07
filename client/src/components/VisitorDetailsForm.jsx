@@ -12,7 +12,7 @@ const VisitorDetailsForm = ({
   message,
   messageType,
   handleCancelLogIn,
-  handleRecordMissedVisitClick
+  handleRecordMissedVisitClick,
 }) => {
   if (!selectedVisitor) return null;
 
@@ -41,8 +41,8 @@ const VisitorDetailsForm = ({
       additional_dependents: newDependents,
     }));
   };
-  const isError = messageType === 'error' && message;
-  const isSuccess = messageType === 'success' && message;
+  const isError = messageType === "error" && message;
+  const isSuccess = messageType === "success" && message;
 
   const handleAddDependent = () => {
     setEditFormData((prev) => ({
@@ -72,7 +72,6 @@ const VisitorDetailsForm = ({
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-
         {/* Left Column - Export & Photo */}
         <div className="md:col-span-1 flex flex-col items-start space-y-4">
           <button
@@ -84,16 +83,16 @@ const VisitorDetailsForm = ({
           </button>
           <div className="flex flex-col items-center w-full mt-6">
             <div className="w-60 h-60 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center border-4 border-gray-300 shadow-inner">
-                <img
-                  src={selectedVisitor.photo_path || "placeholder"}
-                  alt="Visitor Photo"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src =
-                      "https://placehold.co/160x160/ccc/666?text=No+Photo";
-                  }}
-                />
+              <img
+                src={selectedVisitor.photo_path || "placeholder"}
+                alt="Visitor Photo"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src =
+                    "https://placehold.co/160x160/ccc/666?text=No+Photo";
+                }}
+              />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mt-3">
               {selectedVisitor.first_name} {selectedVisitor.last_name}
@@ -184,7 +183,6 @@ const VisitorDetailsForm = ({
 
           {/* Dependents Input (Row 4) */}
           <div className="md:col-span-2 space-y-3 pt-2">
-           
             {dependents.map((dependent, index) => (
               <div
                 key={index}
@@ -216,7 +214,7 @@ const VisitorDetailsForm = ({
                 </button>
               </div>
             ))}
-            
+
             <button
               type="button"
               onClick={handleAddDependent}
@@ -227,23 +225,32 @@ const VisitorDetailsForm = ({
           </div>
         </div>
       </div>
-              {message && (isError || isSuccess) && (
-          <div className={`p-3 rounded-lg text-center font-medium mb-4 ${
-            messageType === 'error' ? 'bg-red-100 text-red-700 border-red-300' :
-            messageType === 'success' ? 'bg-green-100 text-green-700 border-green-300' :
-            'bg-blue-100 text-blue-700 border-blue-300'
-          } border`}>
-            {message}
-          </div>
-        )}
+      {message && (isError || isSuccess) && (
+        <div
+          className={`p-3 rounded-lg text-center font-medium mb-4 ${
+            messageType === "error"
+              ? "bg-red-100 text-red-700 border-red-300"
+              : messageType === "success"
+              ? "bg-green-100 text-green-700 border-green-300"
+              : "bg-blue-100 text-blue-700 border-blue-300"
+          } border`}
+        >
+          {message}
+        </div>
+      )}
       {/* Action Buttons */}
       <div className="flex flex-wrap justify-center gap-4 pt-8 border-t mt-8">
-<button
-    onClick={handleRecordMissedVisitClick}
-    className="w-full md:w-auto px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow-md hover:bg-yellow-600 transition-colors flex items-center justify-center"
->
-    Correct Missed Entry
-</button>
+        <button
+          onClick={handleRecordMissedVisitClick}
+          className={`px-8 py-3 font-bold rounded-lg transition-all shadow-xl ${
+            isBanned
+              ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+              : "bg-yellow-700 -600 text-white hover:bg-yellow-900 -700"
+          }`}
+          disabled={isBanned}
+        >
+          Correct Missed Entry
+        </button>
         <button
           onClick={() => handleLogin(selectedVisitor.id)}
           className={`px-8 py-3 font-bold rounded-lg transition-all shadow-xl ${
