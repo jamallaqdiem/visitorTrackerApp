@@ -25,15 +25,16 @@ function createLoginRouter(db) {
         T2.type,
         T2.company_name,
         GROUP_CONCAT(json_object('full_name', T3.full_name, 'age', T3.age), ',') AS dependents_json
-      FROM visitors AS T1
-      LEFT JOIN visits AS T2
-        ON T1.id = T2.visitor_id
-      LEFT JOIN dependents AS T3
+        FROM visitors AS T1 
+    LEFT JOIN (
+        SELECT *, ROW_NUMBER() OVER(PARTITION BY visitor_id ORDER BY entry_time DESC) as rn
+        FROM visits
+    ) AS T2 
+        ON T1.id = T2.visitor_id AND T2.rn = 1
+    LEFT JOIN dependents AS T3
         ON T2.id = T3.visit_id
-      WHERE T1.id = ?
-      GROUP BY T1.id
-      ORDER BY T2.entry_time DESC
-      LIMIT 1
+    WHERE T1.id = ?
+    GROUP BY T1.id
     `;
 
     db.get(findSql, [id], (err, row) => {
@@ -51,6 +52,20 @@ function createLoginRouter(db) {
           .json({ message: "This visitor is banned and cannot log in." });
       }
 
+      let dependentsData = [];
+      if (row.dependents_json) {
+        try {
+          dependentsData = JSON.parse(`[${row.dependents_json}]`);
+          dependentsData = dependentsData.filter(
+            (dep) => dep.full_name && dep.full_name.trim() !== ""
+          );
+        } catch (parseErr) {
+          console.error(
+            "Failed to parse dependents JSON for insertion:",
+            parseErr.message
+          );
+        }
+      }
       // Step 2: Insert a new visit record.
       const insertSql = `
         INSERT INTO visits (visitor_id, entry_time, phone_number, unit, reason_for_visit, type, company_name)
@@ -71,14 +86,28 @@ function createLoginRouter(db) {
           console.error("SQL Error inserting new visit:", err.message);
           return res.status(500).json({ error: err.message });
         }
-        // Step 3: Respond with the retrieved data.
-        let dependentsData = [];
-        if (row.dependents_json) {
-          try {
-            dependentsData = JSON.parse(`[${row.dependents_json}]`);
-          } catch (parseErr) {
-            console.error("Failed to parse dependents JSON:", parseErr.message);
-          }
+        const newVisitId = this.lastID; // Get the ID of the newly created visit
+
+        if (dependentsData.length > 0) {
+          const dependentInsertSql = `
+						INSERT INTO dependents (visit_id, full_name, age)
+						VALUES (?, ?, ?)
+					`;
+
+          dependentsData.forEach((dep) => {
+            db.run(
+              dependentInsertSql,
+              [newVisitId, dep.full_name, dep.age],
+              (depErr) => {
+                if (depErr) {
+                  console.error(
+                    "SQL Error inserting dependent:",
+                    depErr.message
+                  );
+                }
+              }
+            );
+          });
         }
 
         const visitorData = {
