@@ -12,6 +12,30 @@ const formatTime = (timeString) => {
     hour12: true 
   });
 };
+// Helper function to parse the aggregated JSON string and format dependents
+const formatDependents = (dependentsString) => {
+  if (!dependentsString) return 'None'; 
+
+  try {
+    const jsonArrayString = `[${dependentsString}]`; 
+    
+    // 2. Parse the JSON string into a JavaScript array of objects
+    const dependentsArray = JSON.parse(jsonArrayString);
+
+    if (!Array.isArray(dependentsArray) || dependentsArray.length === 0) {
+      return 'None';
+    }
+
+    // 3. Map over the array to format each dependent and join them
+    return dependentsArray.map(dep => 
+      `${dep.full_name} ${dep.age || 'N/A'}`
+    ).join(', '); 
+
+  } catch (error) {
+    console.error("Failed to parse dependents JSON:", error);
+    return 'Error Parsing Data';
+  }
+};
 
 const VisitorsDashboard = ({
   searchTerm, loadingDashboard,
@@ -114,6 +138,7 @@ const VisitorsDashboard = ({
               <thead>
                 <tr className="bg-blue-50 text-left text-xs font-semibold uppercase tracking-wider text-blue-600">
                   <th className="px-4 py-3">Full Name</th>
+                  <th className="px-4 py-3">Dependents/Age</th>
                   <th className="px-4 py-3 hidden sm:table-cell">Type</th>
                   <th className="px-4 py-3 hidden md:table-cell ">Unit</th>
                   <th className="px-4 py-3 hidden md:table-cell ">Reason</th>
@@ -125,6 +150,7 @@ const VisitorsDashboard = ({
                 {visitors.map((v) => (
                   <tr key={v.id} className="hover:bg-blue-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-gray-800 ">{v.first_name} {v.last_name}</td>
+                    <td className="px-4 py-3 hidden sm:table-cell text-sm text-gray-600 capitalize ">{formatDependents(v.additional_dependents)}</td>
                     <td className="px-4 py-3 hidden sm:table-cell text-sm text-gray-600 capitalize ">{v.type}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 break-words max-w-[10rem]">{v.unit}</td>
                     <td className="px-4 py-3 hidden md:table-cell text-sm text-gray-600 break-words max-w-[10rem]">{v.reason_for_visit || 'N/A'}</td>
