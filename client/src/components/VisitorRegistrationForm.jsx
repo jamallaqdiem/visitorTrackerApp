@@ -99,7 +99,7 @@ const VisitorRegistrationForm = ({
           {/* Unit */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Unit{" "}
+              Flat/Unit{" "}
             </label>
             <input
               type="text"
@@ -152,7 +152,7 @@ const VisitorRegistrationForm = ({
             }
           >
             <label className="block text-sm font-medium text-gray-700">
-              Reason for Visit
+              Note/Reason for Visit
             </label>
             <textarea
               name="reasonForVisit"
