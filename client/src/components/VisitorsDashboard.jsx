@@ -19,16 +19,16 @@ const formatDependents = (dependentsString) => {
   try {
     const jsonArrayString = `[${dependentsString}]`; 
     
-    // 2. Parse the JSON string into a JavaScript array of objects
+    // 2. Parsing the JSON string into a JavaScript array of objects
     const dependentsArray = JSON.parse(jsonArrayString);
 
     if (!Array.isArray(dependentsArray) || dependentsArray.length === 0) {
       return 'None';
     }
 
-    // 3. Map over the array to format each dependent and join them
+    // 3. Mapping over the array to format each dependent and join them
     return dependentsArray.map(dep => 
-      `${dep.full_name} ${dep.age || 'N/A'}`
+      `${dep.full_name || '--'} ${dep.age || '--'}`
     ).join(', '); 
 
   } catch (error) {
@@ -152,8 +152,8 @@ const VisitorsDashboard = ({
                     <td className="px-4 py-3 font-medium text-gray-800 ">{v.first_name} {v.last_name}</td>
                     <td className="px-4 py-3 hidden sm:table-cell text-sm text-gray-600 capitalize ">{formatDependents(v.additional_dependents)}</td>
                     <td className="px-4 py-3 hidden sm:table-cell text-sm text-gray-600 capitalize ">{v.type}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 break-words max-w-[10rem]">{v.unit}</td>
-                    <td className="px-4 py-3 hidden md:table-cell text-sm text-gray-600 break-words max-w-[10rem]">{v.reason_for_visit || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 break-words max-w-[10rem]">{v.unit || '---'}</td>
+                    <td className="px-4 py-3 hidden md:table-cell text-sm text-gray-600 break-words max-w-[10rem]">{v.reason_for_visit || '---'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 ">
                       {formatTime(v.entry_time)}
                     </td>
