@@ -122,7 +122,7 @@ const VisitorDetailsForm = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Unit{" "}
+              Flat/Unit{" "}
             </label>
             <input
               type="text"
@@ -136,7 +136,7 @@ const VisitorDetailsForm = ({
           {/* Reason for Visit & Company (Row 2) */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Reason for Visit
+              Note/Reason for Visit
             </label>
             <input
               type="text"
@@ -162,7 +162,7 @@ const VisitorDetailsForm = ({
           {/* Type & Dependents Label (Row 3) */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Type
+              Visitor type
             </label>
             <select
               name="type"
