@@ -2,16 +2,17 @@ import React from 'react';
 import { EyeIcon, EyeOffIcon } from './IconComponents';
 
 const PasswordModal = ({
-  showPasswordModal, confirmUnban, password, setPassword,
-  showPassword, setShowPassword, message, messageType, setShowPasswordModal
+  showPasswordModal, EnterPassword, password, setPassword,
+  showPassword, setShowPassword, message, messageType, setShowPasswordModal,
+  modalTitle, modalDescription, submitButtonText
 }) => {
   if (!showPasswordModal) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md border-t-4 border-blue-600">
-        <h3 className="text-xl font-bold text-blue-800 mb-4">Confirm Unban</h3>
-        <p className="text-gray-600 mb-4">Enter Admin Password to authorize unban action.</p>
+        <h3 className="text-xl font-bold text-blue-800 mb-4">{modalTitle}</h3>
+        <p className="text-gray-600 mb-4">{modalDescription}</p>
 
         {/* Notification Area */}
         {message && messageType === 'error' && (
@@ -20,11 +21,11 @@ const PasswordModal = ({
           </div>
         )}
 
-        <form onSubmit={confirmUnban} className="space-y-4">
+        <form onSubmit={EnterPassword} className="space-y-4">
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Admin Password"
+              placeholder="Enter Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg pr-10 focus:border-blue-500 focus:ring-blue-500 transition-shadow"
@@ -43,7 +44,7 @@ const PasswordModal = ({
             <button
               type="button"
               onClick={() => setShowPasswordModal(false)}
-              className="px-4 py-2 font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+              className="px-4 py-2 font-semibold rounded-lg bg-red-600 text-white hover:bg-gray-300 transition-colors"
             >
               Cancel
             </button>
@@ -51,7 +52,7 @@ const PasswordModal = ({
               type="submit"
               className="px-4 py-2 font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
             >
-              Unban
+              {submitButtonText}
             </button>
           </div>
         </form>
