@@ -20,6 +20,8 @@ const VisitorRegistrationForm = ({
   const [showPhotoChoice, setShowPhotoChoice] = useState(false);
   const [captureMode, setCaptureMode] = useState(null);
   const [inputKey, setInputKey] = useState(0);
+  const [isAgreementCheckedAdult, setIsAgreementCheckedAdult] = useState(false);
+  const [isAgreementCheckedChild, setIsAgreementCheckedChild] = useState(false);
   const isError = messageType === "error" && message;
   const isSuccess = messageType === "success" && message;
 
@@ -31,13 +33,13 @@ const VisitorRegistrationForm = ({
     }
     // 2. Update state to trigger re-render of the input element with the new attributes
     setCaptureMode(newCaptureMode);
-    setInputKey((prevKey) => prevKey + 1); 
+    setInputKey((prevKey) => prevKey + 1);
 
     setTimeout(() => {
       if (fileInputRef.current) {
         fileInputRef.current.click();
       }
-      setShowPhotoChoice(false); 
+      setShowPhotoChoice(false);
     }, 50);
   };
 
@@ -163,7 +165,6 @@ const VisitorRegistrationForm = ({
             ></textarea>
           </div>
         </div>
-
         {/* Photo and Dependents Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t">
           {/* Photo Upload */}         {" "}
@@ -174,7 +175,6 @@ const VisitorRegistrationForm = ({
             </label>
              
             <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-inner">
-                           {" "}
               {photoPreviewUrl ? (
                 <img
                   src={photoPreviewUrl}
@@ -231,9 +231,10 @@ const VisitorRegistrationForm = ({
                 </button>
               </div>
             )}
-                     {" "}
+               {" "}
           </div>
           {/* Additional Dependents */}
+          {["visitor"].includes(formData.visitorType) && (
           <div className="md:col-span-2 space-y-3">
             <h4 className="text-lg font-semibold text-gray-800">
               Additional Dependents
@@ -268,6 +269,23 @@ const VisitorRegistrationForm = ({
                   >
                     Remove
                   </button>
+                       {" "}
+                  <div className="mt-6">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isAgreementCheckedChild}
+                        onChange={(e) =>
+                          setIsAgreementCheckedChild(e.target.checked)
+                        }
+                        className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <span className="text-base font-medium  text-red-500">
+                        * Child Agreement & Disclaimer form completed and signed
+                        (Staff Check)
+                      </span>
+                    </label>
+                  </div>
                 </div>
               ))}
               <button
@@ -279,8 +297,8 @@ const VisitorRegistrationForm = ({
               </button>
             </div>
           </div>
+          )}
         </div>
-
         {message && (isError || isSuccess) && (
           <div
             className={`p-3 rounded-lg text-center font-medium mb-4 ${
@@ -294,14 +312,31 @@ const VisitorRegistrationForm = ({
             {message}
           </div>
         )}
-
+             {" "}
+        <div className="mt-6">
+          <label className="flex items-center space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAgreementCheckedAdult}
+              onChange={(e) => setIsAgreementCheckedAdult(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+            />
+            <span className="text-base font-medium  text-red-500">
+              * Agreement & Disclaimer form completed and signed (Staff Check)
+            </span>
+          </label>
+        </div>
         {/* Form Actions */}
         <div className="flex justify-center space-x-4 pt-6 border-t">
           <button
             type="submit"
             className="px-8 py-3 font-bold rounded-lg transition-all shadow-xl bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
             disabled={
-              loadingRegistration || !formData.firstName || !formData.lastName
+              loadingRegistration ||
+              !formData.firstName ||
+              !formData.lastName ||
+              !isAgreementCheckedAdult ||
+              (dependents.length > 0 && !isAgreementCheckedChild)
             }
           >
             {loadingRegistration ? "Registering..." : "Register & Sign In"}

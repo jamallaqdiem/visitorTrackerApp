@@ -233,6 +233,9 @@ const [modalContext, setModalContext] = useState({
 
   // Cancel/Back to Dashboard Handler
   const handleCancelAction = () => {
+    setRegFormData(initialRegistrationForm)
+    setRegDependents([])
+    setPhotoPreviewUrl(null)
     setSelectedVisitor(null);
     setSearchResults([]);
     setSearchTerm("");
@@ -834,7 +837,7 @@ const handlePrintTable = () => {
           </button>
 
         {/* Button Group for View Switching */}
-        {!showHistory && (
+        {!showHistory && !showRegistration &&(
         <div className="flex min-w-[200px] justify-center mt-4">
           <button
             onClick={() => {
