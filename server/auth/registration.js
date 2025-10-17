@@ -16,6 +16,8 @@ function createRegistrationRouter(db, upload) {
     const {
       first_name,
       last_name,
+      known_as,
+      address,
       phone_number,
       unit,
       reason_for_visit,
@@ -38,7 +40,7 @@ function createRegistrationRouter(db, upload) {
       // If a row is found, it means the visitor already exists.
       if (row) {
         const message = `A visitor named ${first_name} ${last_name} already exists . Please use the search bar to log them in.`;
-        return res.status(409).json({ message }); // 409 Conflict status
+        return res.status(409).json({ message }); 
       }
 
         db.run("BEGIN TRANSACTION;");
@@ -53,14 +55,16 @@ function createRegistrationRouter(db, upload) {
 
           const visitsSql = `
           INSERT INTO visits (
-            visitor_id, entry_time, phone_number, unit, reason_for_visit, type, company_name
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            visitor_id, entry_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
           const entry_time = new Date().toISOString();
           db.run(
             visitsSql,
             [
               visitorId,
               entry_time,
+              known_as,
+              address,
               phone_number,
               unit,
               reason_for_visit,

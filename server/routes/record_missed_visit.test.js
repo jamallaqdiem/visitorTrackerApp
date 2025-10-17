@@ -1,7 +1,6 @@
 const request = require("supertest");
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
-// NOTE: Make sure the path to your router is correct relative to this file
 const createMissedVisitRouter = require("./record_missed_visit"); 
 
 // --- Helper Functions ---
@@ -53,6 +52,8 @@ mockDb.serialize(() => {
         visitor_id INTEGER NOT NULL,
         entry_time TEXT NOT NULL,
         exit_time TEXT,
+        known_as TEXT,
+        address TEXT,
         phone_number TEXT,
         unit TEXT NOT NULL,
         reason_for_visit TEXT,
@@ -78,6 +79,8 @@ app.use("/", createMissedVisitRouter(mockDb)); // Attach the router
 let testVisitorId;
 // Sample data matching the required NOT NULL fields
 const sampleVisitDetails = {
+    known_as: 'miky',
+    address: '700 london road Portsmouth Po70 3as',
     unit: '101A',
     phone_number: '555-1212',
     type: 'Guest',
@@ -88,15 +91,16 @@ beforeEach(async () => {
     // 1. Insert a visitor
     testVisitorId = await runDB(mockDb, `INSERT INTO visitors (first_name, last_name) VALUES (?, ?)`, ['Test', 'Visitor']);
     
-    // 2. CRITICAL FIX: Insert a valid, complete previous visit record.
-    // This record ensures the new router's SELECT query finds data to copy (unit, type, etc.).
+    // 2. Insert a valid, complete previous visit record.
     await runDB(mockDb, `
-        INSERT INTO visits (visitor_id, entry_time, exit_time, phone_number, unit, reason_for_visit, type) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+        INSERT INTO visits (visitor_id, entry_time, exit_time, known_as, address, phone_number, unit, reason_for_visit, type) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
         [
             testVisitorId, 
             new Date(Date.now() - 3600000).toISOString(), // Entry: 1 hour ago
             new Date(Date.now() - 1800000).toISOString(), // Exit: 30 minutes ago
+            sampleVisitDetails.known_as,
+            sampleVisitDetails.address,
             sampleVisitDetails.phone_number,
             sampleVisitDetails.unit,
             sampleVisitDetails.reason_for_visit,
@@ -151,7 +155,7 @@ describe('POST /record-missed-visit', () => {
 
         // 3. Verify database insertion
         const dbResult = await new Promise((resolve, reject) => {
-            // Check for the newly created visit (there should be two now)
+            // Check for the newly created visit
             mockDb.all(`SELECT entry_time, exit_time, unit, type FROM visits WHERE visitor_id = ? ORDER BY entry_time DESC`, [testVisitorId], (err, rows) => {
                 if (err) return reject(err);
                 resolve(rows);
@@ -198,7 +202,6 @@ describe('POST /record-missed-visit', () => {
 
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message');
-        // FIX: Update expected string to match the exact string returned by the router
         expect(response.body.message).toContain('Invalid entry time. It must be a valid date/time and occur before the current exit time.');
     });
 });

@@ -30,14 +30,12 @@ function createLogoutRouter(db) {
           .json({ message: "Visitor not found or already signed out." });
       }
 
-      // Now, update the specific visit using its ID
       const updateSql = `UPDATE visits SET exit_time = ? WHERE id = ?`;
       db.run(updateSql, [exit_time, row.visit_id], function (err) {
         if (err) {
           console.error("SQL Error in exit-visitor:", err.message);
           return res.status(500).json({ error: err.message });
         }
-        // Use the full name retrieved from the database
         const fullName = `${row.first_name} ${row.last_name}`;
         res
           .status(200)

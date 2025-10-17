@@ -19,6 +19,8 @@ function createLoginRouter(db) {
       SELECT
         T1.id,
         T1.is_banned,
+        T2.known_as,
+        T2.address,
         T2.phone_number,
         T2.unit,
         T2.reason_for_visit,
@@ -68,12 +70,14 @@ function createLoginRouter(db) {
       }
       // Step 2: Insert a new visit record.
       const insertSql = `
-        INSERT INTO visits (visitor_id, entry_time, phone_number, unit, reason_for_visit, type, company_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO visits (visitor_id, entry_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
         id,
         entry_time,
+        row.known_as,
+        row.address,
         row.phone_number,
         row.unit,
         row.reason_for_visit,

@@ -107,7 +107,67 @@ const VisitorDetailsForm = ({
 
         {/* Right Column - Form Fields */}
         <div className="md:col-span-1 grid grid-cols-1 gap-6">
-          {/* Phone Number & Unit (Row 1) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Visitor type
+            </label>
+            <select
+              name="type"
+              value={editFormData.type || "visitor"}
+              onChange={handleEditChange}
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-shadow bg-white"
+            >
+              <option value="visitor">Guest</option>
+              <option value="contractor">Contractor</option>
+              <option value="professional">Professional</option>
+            </select>
+          </div>
+          {["contractor", "professional"].includes(editFormData.type) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Company / Organization
+              </label>
+              <input
+                type="text"
+                name="company_name"
+                value={editFormData.company_name || ""}
+                onChange={handleEditChange}
+                className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-shadow"
+              />
+            </div>
+          )}
+
+          {/* known by any other names*/}
+          {["visitor"].includes(editFormData.type) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Known by other Names
+              </label>
+              <input
+                type="text"
+                name="known_as"
+                value={editFormData.known_as || ""}
+                onChange={handleEditChange}
+                className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-shadow"
+              />
+            </div>
+          )}
+          {/* address  */}
+          {["visitor"].includes(editFormData.type) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 ">
+                Address
+              </label>
+              <textarea
+                rows="2"
+                name="address"
+                value={editFormData.address || ""}
+                onChange={handleEditChange}
+                className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-shadow resize-none"
+              />
+            </div>
+          )}
+          {/* Phone Number & Unit  */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Phone Number
@@ -133,7 +193,7 @@ const VisitorDetailsForm = ({
             />
           </div>
 
-          {/* Reason for Visit & Company (Row 2) */}
+          {/* Reason for Visit & Company */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Note/Reason for Visit
@@ -146,83 +206,57 @@ const VisitorDetailsForm = ({
               className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-shadow"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Company / Organization
-            </label>
-            <input
-              type="text"
-              name="company_name"
-              value={editFormData.company_name || ""}
-              onChange={handleEditChange}
-              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-shadow"
-            />
-          </div>
 
-          {/* Type & Dependents Label (Row 3) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Visitor type
-            </label>
-            <select
-              name="type"
-              value={editFormData.type || "visitor"}
-              onChange={handleEditChange}
-              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 transition-shadow bg-white"
-            >
-              <option value="visitor">Guest</option>
-              <option value="contractor">Contractor</option>
-              <option value="professional">Professional</option>
-            </select>
-          </div>
-          <div className="self-end">
-            <label className="block text-sm font-medium text-gray-700">
-              Additional Dependents
-            </label>
-          </div>
+          {/* Type & Dependents Label */}
+          {["visitor"].includes(editFormData.type) && (
+            <div className="self-end">
+              <label className="block text-sm font-medium text-gray-700">
+                Additional Dependents
+              </label>
 
-          {/* Dependents Input (Row 4) */}
-          <div className="md:col-span-2 space-y-3 pt-2">
-            {dependents.map((dependent, index) => (
-              <div
-                key={index}
-                className="flex flex-col sm:flex-row gap-3 items-center p-3 bg-gray-50 rounded-lg border border-gray-200"
-              >
-                <input
-                  type="text"
-                  name="full_name"
-                  placeholder="Dependent's Name"
-                  value={dependent.full_name || ""}
-                  onChange={(e) => handleDependentEditChange(index, e)}
-                  className="flex-grow p-2 border border-gray-300 rounded-lg text-sm"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  name="age"
-                  placeholder="Age"
-                  value={dependent.age || ""}
-                  onChange={(e) => handleDependentEditChange(index, e)}
-                  className="w-full sm:w-20 p-2 border border-gray-300 rounded-lg text-sm"
-                />
+              <div className="md:col-span-2 space-y-3 pt-2">
+                {dependents.map((dependent, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col sm:flex-row gap-3 items-center p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <input
+                      type="text"
+                      name="full_name"
+                      placeholder="Dependent's Name"
+                      value={dependent.full_name || ""}
+                      onChange={(e) => handleDependentEditChange(index, e)}
+                      className="flex-grow p-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      name="age"
+                      placeholder="Age"
+                      value={dependent.age || ""}
+                      onChange={(e) => handleDependentEditChange(index, e)}
+                      className="w-full sm:w-20 p-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDependent(index)}
+                      className="w-full sm:w-auto px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-md"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
                 <button
                   type="button"
-                  onClick={() => handleRemoveDependent(index)}
-                  className="w-full sm:w-auto px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-md"
+                  onClick={handleAddDependent}
+                  className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors mt-2 p-1 rounded-md hover:bg-blue-50"
                 >
-                  Remove
+                  + Add Dependent
                 </button>
               </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={handleAddDependent}
-              className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors mt-2 p-1 rounded-md hover:bg-blue-50"
-            >
-              + Add Dependent
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       </div>
       {message && (isError || isSuccess) && (

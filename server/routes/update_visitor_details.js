@@ -13,6 +13,8 @@ function createUpdateVisitorRouter(db) {
   router.post("/update-visitor-details", (req, res) => {
     const {
       id,
+      known_as,
+      address,
       phone_number,
       unit,
       reason_for_visit,
@@ -39,8 +41,8 @@ function createUpdateVisitorRouter(db) {
         // Insert a new visit record.
         const visitsSql = `
           INSERT INTO visits (
-            visitor_id, entry_time, phone_number, unit, reason_for_visit, type, company_name
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            visitor_id, entry_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         const entry_time = new Date().toISOString();
 
         db.run(
@@ -48,6 +50,8 @@ function createUpdateVisitorRouter(db) {
           [
             id, // Use the existing visitor ID
             entry_time,
+            known_as,
+            address,
             phone_number,
             unit,
             reason_for_visit,
@@ -62,7 +66,7 @@ function createUpdateVisitorRouter(db) {
             }
             const newVisitId = this.lastID;
 
-            // Now, handle dependents and link them to the NEW visit record
+            // handle dependents and link them to the NEW visit record
             if (additional_dependents) {
               let dependentsArray = [];
               try {

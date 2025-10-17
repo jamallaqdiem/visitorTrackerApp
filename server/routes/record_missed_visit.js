@@ -18,8 +18,6 @@ function createMissedVisitRouter(db) {
     router.post("/record-missed-visit", (req, res) => {
         // 1. Extract data from the request body
         const { visitorId, pastEntryTime } = req.body;
-
-        // 2. Server-side validation
         if (!visitorId || !pastEntryTime) {
             return res.status(400).json({ message: "Missing visitor ID or required entry time." });
         }
@@ -41,7 +39,7 @@ function createMissedVisitRouter(db) {
         // 4. Step 1: Find the details of the visitor's most recent visit.
         const selectSql = `
             SELECT 
-                phone_number, unit, reason_for_visit, type, company_name 
+                known_as, address, phone_number, unit, reason_for_visit, type, company_name 
             FROM visits 
             WHERE visitor_id = ? 
             ORDER BY entry_time DESC 
@@ -56,28 +54,29 @@ function createMissedVisitRouter(db) {
 
             // Use details from the last visit, or fall back to defaults if no previous record exists
             const visitDetails = lastVisit || {};
-
-            // We must explicitly set null for optional fields to avoid inserting 'undefined'
-            // and use sensible defaults for required fields (unit, type) if no past visit exists.
+            const knownAs = visitDetails.known_as || '--';
+            const address1 = visitDetails.address || '--';
             const phoneNumber = visitDetails.phone_number || null;
-            const unit = visitDetails.unit || "N/A (Historical Entry)"; // Required by your schema
+            const unit = visitDetails.unit || "--"; 
             const reasonForVisit = visitDetails.reason_for_visit || null;
-            const type = visitDetails.type || "Visitor (Historical)"; // Required by your schema
+            const type = visitDetails.type || "Visitor"; 
             const companyName = visitDetails.company_name || null;
 
             // 5. Step 2: Insert the new historical record
             const insertSql = `
                 INSERT INTO visits (
-                    visitor_id, entry_time, exit_time, phone_number, unit, reason_for_visit, type, company_name
+                    visitor_id, entry_time, exit_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             db.run(insertSql, 
                 [
                     visitorId, 
                     entry_time_iso, 
-                    currentExitTime, 
+                    currentExitTime,
+                    knownAs,
+                    address1, 
                     phoneNumber, 
                     unit, 
                     reasonForVisit, 

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
@@ -25,9 +26,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// Serve static images from the 'uploads' directory
-
 
 // Ensure the uploads directory exists
 const uploadsDir = "uploads";
@@ -83,12 +81,14 @@ const db = new sqlite3.Database("database.db", (err) => {
       is_banned BOOLEAN DEFAULT 0
     )`);
 
-    // This is the new visits table with all visit-specific details
+    // This is the new visits table 
     db.run(`CREATE TABLE IF NOT EXISTS visits (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       visitor_id INTEGER NOT NULL,
       entry_time TEXT NOT NULL,
       exit_time TEXT,
+      known_as TEXT,
+      address TEXT,
       phone_number TEXT,
       unit TEXT NOT NULL,
       reason_for_visit TEXT,

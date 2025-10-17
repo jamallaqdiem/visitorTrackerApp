@@ -58,20 +58,20 @@ function App() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
-// --- Global Password/Modal State ---
+  // --- Global Password/Modal State ---
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-const [password, setPassword] = useState(""); // Universal password input state
-const [showPassword, setShowPassword] = useState(false); // Universal show/hide password state
+  const [password, setPassword] = useState(""); // Universal password input state
+  const [showPassword, setShowPassword] = useState(false); // Universal show/hide password state
 
-// --- Modal Context State (Tracks the pending action) ---
-const [modalContext, setModalContext] = useState({
-  type: null, // 'unban' or 'viewHistory'
-  visitorId: null, // ID needed for unban (null for viewHistory)
-  title: '',
-  description: '',
-  submitText: '',
-  submitColor: 'bg-green-600 hover:bg-green-700',
-});
+  // --- Modal Context State (Tracks the pending action) ---
+  const [modalContext, setModalContext] = useState({
+    type: null, 
+    visitorId: null, 
+    title: "",
+    description: "",
+    submitText: "",
+    submitColor: "bg-green-600 hover:bg-green-700",
+  });
 
   // --- Record Missed Visit Modal State ---
   const [showMissedVisitModal, setShowMissedVisitModal] = useState(false);
@@ -120,7 +120,7 @@ const [modalContext, setModalContext] = useState({
   // --- API: Fetch Currently Signed-In Visitors ---
   const fetchVisitors = useCallback(async () => {
     // Only show loading indicator initially or when explicitly triggered
-   setIsLoading(true);
+    setIsLoading(true);
     setError(null);
     try {
       const response = await fetch(`${API_BASE_URL}/visitors`);
@@ -212,6 +212,8 @@ const [modalContext, setModalContext] = useState({
     // Prepare edit form data
     setEditFormData({
       id: visitor.id,
+      known_as: visitor.known_as || "",
+      address: visitor.address || "",
       phone_number: visitor.phone_number || "",
       unit: visitor.unit || "",
       reason_for_visit: visitor.reason_for_visit || "",
@@ -233,9 +235,9 @@ const [modalContext, setModalContext] = useState({
 
   // Cancel/Back to Dashboard Handler
   const handleCancelAction = () => {
-    setRegFormData(initialRegistrationForm)
-    setRegDependents([])
-    setPhotoPreviewUrl(null)
+    setRegFormData(initialRegistrationForm);
+    setRegDependents([]);
+    setPhotoPreviewUrl(null);
     setSelectedVisitor(null);
     setSearchResults([]);
     setSearchTerm("");
@@ -287,6 +289,8 @@ const [modalContext, setModalContext] = useState({
     const formData = new FormData();
     formData.append("first_name", regFormData.firstName);
     formData.append("last_name", regFormData.lastName);
+    formData.append("known_as", regFormData.knownAs || "");
+    formData.append("address", regFormData.address || "");
     formData.append("phone_number", regFormData.phoneNumber);
     formData.append("unit", regFormData.unit);
     formData.append("reason_for_visit", regFormData.reasonForVisit);
@@ -414,6 +418,8 @@ const [modalContext, setModalContext] = useState({
     );
     const dataToSend = {
       id: selectedVisitor.id,
+      known_as: editFormData.known_as,
+      address: editFormData.address,
       phone_number: editFormData.phone_number,
       unit: editFormData.unit,
       reason_for_visit: editFormData.reason_for_visit,
@@ -480,103 +486,111 @@ const [modalContext, setModalContext] = useState({
 
   // The first function that will handle the unban password.
   const handleUnbanClick = (id) => {
-      setPassword(""); 
-    setMessage("");
-    setModalContext({
-        type: 'unban',
-        visitorId: id,
-        title: 'Confirm Unban Action',
-        description: 'Enter the Admin Password to authorize unbanning this visitor.',
-        submitText: 'Authorize Unban',
-        submitColor: 'bg-red-600 hover:bg-red-700'
-    });
+    setPassword("");
+    setMessage("");
+    setModalContext({
+      type: "unban",
+      visitorId: id,
+      title: "Confirm Unban Action",
+      description:
+        "Enter the Admin Password to authorize unbanning this visitor.",
+      submitText: "Authorize Unban",
+      submitColor: "bg-red-600 hover:bg-red-700",
+    });
     setShowPasswordModal(true);
   };
 
-// The second function to handle showing the modal for viewing history
-const handleViewHistoryClick = () => {
-    setPassword(""); 
-    setMessage("");
-    // Setting the universal context for history view
-    setModalContext({
-        type: 'viewHistory',
-        visitorId: null,
-        title: 'Access Visitor History',
-        description: 'Enter the Authorization Password to view all historical records.',
-        submitText: 'Access Records',
-    });
-    setShowPasswordModal(true);
-};
-// Using a Universal function that will handle boths logics unban and view history data.
-const EnterPassword = async (e) => {
-    e.preventDefault();
-    const currentAction = modalContext.type;
-    const currentId = modalContext.visitorId;
+  // The second function to handle showing the modal for viewing history
+  const handleViewHistoryClick = () => {
+    setPassword("");
+    setMessage(""); 
+    setModalContext({
+      type: "viewHistory",
+      visitorId: null,
+      title: "Access Visitor History",
+      description:
+        "Enter the Authorization Password to view all historical records.",
+      submitText: "Access Records",
+    });
+    setShowPasswordModal(true);
+  };
+  // Using a Universal function that will handle boths logics unban and view history data.
+  const EnterPassword = async (e) => {
+    e.preventDefault();
+    const currentAction = modalContext.type;
+    const currentId = modalContext.visitorId;
 
-    if (!password) {
-        showNotification("Password is required.", "error");
-        return;
-    }
+    if (!password) {
+      showNotification("Password is required.", "error");
+      return;
+    } // --- 1. HANDLE UNBAN LOGIC ---
 
-    // --- 1. HANDLE UNBAN LOGIC ---
-    if (currentAction === 'unban') {
-        try {
-            const response = await fetch(`${API_BASE_URL}/unban-visitor/${currentId}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password }), 
-            });
-            const result = await response.json();
+    if (currentAction === "unban") {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/unban-visitor/${currentId}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password }),
+          }
+        );
+        const result = await response.json();
 
-            if (!response.ok) {
-                throw new Error(result.message || "Failed to unban visitor.");
-            }
-
-            showNotification(result.message, "success");
-            setShowPasswordModal(false);
-            setSelectedVisitor((prev) => (prev ? { ...prev, is_banned: 0 } : null));
-            fetchVisitors();
-        } catch (err) {
-            console.error("Unban Error:", err.message);
-            showNotification(`Unban Failed: ${err.message}`, "error");
-            setPassword(""); 
-            return;
-        }
-    } 
-    // --- 2. HANDLE VIEW HISTORY LOGIC ---
-    else if (currentAction === 'viewHistory') {
-        //  Password check for history data
-        try {
-            const response = await fetch(`${API_BASE_URL}/authorize-history`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password }), 
-            });
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || "History access denied.");
-            }
-            setShowPasswordModal(false);
-            setShowHistory(true); 
-            setSelectedVisitor(null);
-            setShowRegistration(false);
-            setSearchResults([]);
-
-            showNotification("History access granted. Loading data...", "blue");
-            fetchHistoryRecords("", "", "");
-
-        } catch (err) {
-            console.error("History Access Error:", err.message);
-            showNotification(`Access Denied: ${err.message}`, "error");
-            setPassword(""); 
-            return;
+        if (!response.ok) {
+          throw new Error(result.message || "Failed to unban visitor.");
         }
+
+        showNotification(result.message, "success");
+        setShowPasswordModal(false);
+        setSelectedVisitor((prev) => (prev ? { ...prev, is_banned: 0 } : null));
+        fetchVisitors();
+      } catch (err) {
+        console.error("Unban Error:", err.message);
+        showNotification(`Unban Failed: ${err.message}`, "error");
+        setPassword("");
+        return;
+      }
+    }
+    // --- 2. HANDLE VIEW HISTORY LOGIC ---
+    else if (currentAction === "viewHistory") {
+      //  Password check for history data
+      try {
+        const response = await fetch(`${API_BASE_URL}/authorize-history`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || "History access denied.");
+        }
+        setShowPasswordModal(false);
+        setShowHistory(true);
+        setSelectedVisitor(null);
+        setShowRegistration(false);
+        setSearchResults([]);
+
+        showNotification("History access granted. Loading data...", "blue");
+        fetchHistoryRecords("", "", "");
+      } catch (err) {
+        console.error("History Access Error:", err.message);
+        showNotification(`Access Denied: ${err.message}`, "error");
+        setPassword("");
+        return;
+      }
     }
 
-    setPassword("");
-    setModalContext({ type: null, visitorId: null, title: '', description: '', submitText: ''});
-};
+    setPassword("");
+    setModalContext({
+      type: null,
+      visitorId: null,
+      title: "",
+      description: "",
+      submitText: "",
+    });
+  };
 
   // handle correcting the entry time
   const handleRecordMissedVisitClick = () => {
@@ -655,129 +669,145 @@ const EnterPassword = async (e) => {
     }
   };
 
-// --- HISTORY DATA LOGIC ---
+  // --- HISTORY DATA LOGIC ---
 
-// Helper function to calculate duration between two dates
-const calculateDuration = (startTime, endTime) => {
+  // Helper function to calculate duration between two dates
+  const calculateDuration = (startTime, endTime) => {
     if (!startTime || !endTime) return null;
 
     const start = new Date(startTime);
     const end = new Date(endTime);
 
-    if (isNaN(start) || isNaN(end)) return 'Invalid Date';
+    if (isNaN(start) || isNaN(end)) return "Invalid Date";
 
     const diffInMilliseconds = Math.abs(end - start);
-    
-    const hours = Math.floor(diffInMilliseconds / (1000 * 60 * 60));
-    const minutes = Math.floor((diffInMilliseconds % (1000 * 60 * 60)) / (1000 * 60));
 
-    let durationString = '';
+    const hours = Math.floor(diffInMilliseconds / (1000 * 60 * 60));
+    const minutes = Math.floor(
+      (diffInMilliseconds % (1000 * 60 * 60)) / (1000 * 60)
+    );
+
+    let durationString = "";
     if (hours > 0) durationString += `${hours}h `;
     durationString += `${minutes}m`;
 
     return durationString.trim();
-};
+  };
 
-
-// Function to fetch history records based on filters 
-const fetchHistoryRecords = async (query = "", start = "", end = "") => {
+  // Function to fetch history records based on filters
+  const fetchHistoryRecords = async (query = "", start = "", end = "") => {
     setHistoryLoading(true);
 
     try {
-        const url = new URL(`${API_BASE_URL}/history`);
-        if (query) url.searchParams.append("query", query);
-        if (start) url.searchParams.append("endDate", start);
-        if (end) url.searchParams.append("endDate", end);
+      const url = new URL(`${API_BASE_URL}/history`);
+      if (query) url.searchParams.append("query", query);
+      if (start) url.searchParams.append("endDate", start);
+      if (end) url.searchParams.append("endDate", end);
 
-        const response = await fetch(url.toString());
+      const response = await fetch(url.toString());
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
 
-        const data = await response.json();
-        
-        // Mapping the received data 
-        let fetchedRecords = data.map(record => {
-            return {
-                id: record.id,
-                ...record,
-                entry_time: record.entry_time ? new Date(record.entry_time) : null, 
-                exit_time: record.exit_time ? new Date(record.exit_time) : null,
-                duration_string: calculateDuration(record.entry_time, record.exit_time) || 'Pending',
-                dependents: (typeof record.dependents === 'string' && record.dependents.length > 0) ? JSON.parse(record.dependents) : record.dependents || []
-            };
-        });
-        
-        setHistoryData(fetchedRecords);
-        setFilteredHistoryData(fetchedRecords); 
-        showNotification(`History fetch complete. Found ${fetchedRecords.length} records.`, "success");
+      const data = await response.json();
 
+      // Mapping the received data
+      let fetchedRecords = data.map((record) => {
+        return {
+          id: record.id,
+          ...record,
+          entry_time: record.entry_time ? new Date(record.entry_time) : null,
+          exit_time: record.exit_time ? new Date(record.exit_time) : null,
+          duration_string:
+            calculateDuration(record.entry_time, record.exit_time) || "Pending",
+          dependents:
+            typeof record.dependents === "string" &&
+            record.dependents.length > 0
+              ? JSON.parse(record.dependents)
+              : record.dependents || [],
+        };
+      });
+
+      setHistoryData(fetchedRecords);
+      setFilteredHistoryData(fetchedRecords);
+      showNotification(
+        `History fetch complete. Found ${fetchedRecords.length} records.`,
+        "success"
+      );
     } catch (e) {
-        console.error("Error fetching history records:", e.message);
-        showNotification(`Failed to fetch history: ${e.message}`, "error");
+      console.error("Error fetching history records:", e.message);
+      showNotification(`Failed to fetch history: ${e.message}`, "error");
     } finally {
-        setHistoryLoading(false);
+      setHistoryLoading(false);
     }
-};
+  };
 
-// Handler to trigger filter application on local data
-const handleApplyFilters = () => {
+  // Handler to trigger filter application on local data
+  const handleApplyFilters = () => {
     let recordsToFilter = [...historyData];
 
     // 2. Filter by Name/Query
     const query = historySearchQuery.trim().toLowerCase();
     if (query) {
-        recordsToFilter = recordsToFilter.filter(record => 
-            (record.first_name + ' ' + record.last_name).toLowerCase().includes(query) ||
-            record.first_name.toLowerCase().includes(query) ||
-            record.last_name.toLowerCase().includes(query)
-        );
+      recordsToFilter = recordsToFilter.filter(
+        (record) =>
+          (record.first_name + " " + record.last_name)
+            .toLowerCase()
+            .includes(query) ||
+          record.first_name.toLowerCase().includes(query) ||
+          record.last_name.toLowerCase().includes(query)
+      );
     }
-    
+
     // 3. Filter by Date Range (Entry Time)
     const start = historyStartDate ? new Date(historyStartDate) : null;
     const end = historyEndDate ? new Date(historyEndDate) : null;
 
     if (start || end) {
-        recordsToFilter = recordsToFilter.filter(record => {
-            const entryTime = record.entry_time; 
+      recordsToFilter = recordsToFilter.filter((record) => {
+        const entryTime = record.entry_time;
 
-            if (!entryTime) return false; 
+        if (!entryTime) return false;
 
-            let isAfterStart = true;
-            if (start) {
-                // Checking if entry is AFTER or EQUAL TO the start date (at midnight)
-                isAfterStart = entryTime.getTime() >= start.getTime(); 
-            }
+        let isAfterStart = true;
+        if (start) {
+          // Checking if entry is AFTER or EQUAL TO the start date (at midnight)
+          isAfterStart = entryTime.getTime() >= start.getTime();
+        }
 
-            let isBeforeEnd = true;
-            if (end) {
-                // Check if entry is BEFORE or EQUAL TO the end date (at 23:59:59)
-                const dayAfterEnd = new Date(end);
-                dayAfterEnd.setDate(dayAfterEnd.getDate() + 1);
-                isBeforeEnd = entryTime.getTime() < dayAfterEnd.getTime();
-            }
+        let isBeforeEnd = true;
+        if (end) {
+          // Check if entry is BEFORE or EQUAL TO the end date (at 23:59:59)
+          const dayAfterEnd = new Date(end);
+          dayAfterEnd.setDate(dayAfterEnd.getDate() + 1);
+          isBeforeEnd = entryTime.getTime() < dayAfterEnd.getTime();
+        }
 
-            return isAfterStart && isBeforeEnd;
-        });
+        return isAfterStart && isBeforeEnd;
+      });
     }
 
     // 4. Update the state variable used for rendering
     setFilteredHistoryData(recordsToFilter);
-    showNotification(`Filtered data applied. Found ${recordsToFilter.length} records.`, "blue");
-};
+    showNotification(
+      `Filtered data applied. Found ${recordsToFilter.length} records.`,
+      "blue"
+    );
+  };
 
-// Handler to clear all filters and re-fetch all data
-const handleClearFilters = () => {
+  // Handler to clear all filters and re-fetch all data
+  const handleClearFilters = () => {
     setHistorySearchQuery("");
     setHistoryStartDate("");
     setHistoryEndDate("");
     fetchHistoryRecords("", "", "");
     setSortConfig({ key: "entry_time", direction: "descending" });
     showNotification("Filters cleared. Loading all history...", "blue");
-};
+  };
 
   // --- Sorting Handler
   const handleRequestSort = useCallback(
@@ -792,10 +822,13 @@ const handleClearFilters = () => {
   );
 
   // handle the print function
-const handlePrintTable = () => {
+  const handlePrintTable = () => {
     window.print();
-    showNotification("Print/PDF dialog opened. Ensure the history table is visible.", "blue");
-};
+    showNotification(
+      "Print/PDF dialog opened. Ensure the history table is visible.",
+      "blue"
+    );
+  };
 
   // Determine which view to show
   const showDashboard = !selectedVisitor && !showRegistration;
@@ -818,50 +851,50 @@ const handlePrintTable = () => {
         <p className="text-lg text-gray-600 mb-4">
           Visitors and Guests Tracking
         </p>
-          <button
-            onClick={() => {
-              const newState = !showHistory;
-              if (newState) {
+        <button
+          onClick={() => {
+            const newState = !showHistory;
+            if (newState) {
               handleViewHistoryClick();
-              } else {
-                setShowHistory(false); 
-                setSelectedVisitor(null);
-                setShowRegistration(false); 
-                setSearchResults([]);
-                showNotification("Back to current visitors dashboard.", "blue");
-              }
-            }}
-            className="absolute top-0 right-0 min-w-[100px] py-2 px-4 bg-indigo-600 text-white text-sm rounded-lg shadow-xl hover:bg-indigo-700 transition-colors"
-          >
-            {showHistory ? "Show Dashboard" : "View Historical Data"}
-          </button>
+            } else {
+              setShowHistory(false);
+              setSelectedVisitor(null);
+              setShowRegistration(false);
+              setSearchResults([]);
+              showNotification("Back to current visitors dashboard.", "blue");
+            }
+          }}
+          className="absolute top-0 right-0 min-w-[100px] py-2 px-4 bg-indigo-600 text-white text-sm rounded-lg shadow-xl hover:bg-indigo-700 transition-colors"
+        >
+          {showHistory ? "Show Dashboard" : "View Historical Data"}
+        </button>
 
         {/* Button Group for View Switching */}
-        {!showHistory && !showRegistration &&(
-        <div className="flex min-w-[200px] justify-center mt-4">
-          <button
-            onClick={() => {
-              setShowRegistration(!showRegistration);
-              setSelectedVisitor(null);
-              setSearchResults([]);
-              setShowHistory(false); 
-              showNotification(
-                showRegistration
-                  ? "Back to Dashboard"
-                  : "Registration Mode Activated",
-                "blue"
-              );
-            }}
-            className="flex-1 min-w-[200px] py-3 px-4 bg-purple-600 text-white font-semibold rounded-lg shadow-xl hover:bg-purple-700 transition-colors"
-          >
-            {showRegistration ? "Show Dashboard" : "Register New Visitor"}
-          </button>
-        </div>
-)}
+        {!showHistory && !showRegistration && (
+          <div className="flex min-w-[200px] justify-center mt-4">
+            <button
+              onClick={() => {
+                setShowRegistration(!showRegistration);
+                setSelectedVisitor(null);
+                setSearchResults([]);
+                setShowHistory(false);
+                showNotification(
+                  showRegistration
+                    ? "Back to Dashboard"
+                    : "Registration Mode Activated",
+                  "blue"
+                );
+              }}
+              className="flex-1 min-w-[200px] py-3 px-4 bg-purple-600 text-white font-semibold rounded-lg shadow-xl hover:bg-purple-700 transition-colors"
+            >
+              {showRegistration ? "Show Dashboard" : "Register New Visitor"}
+            </button>
+          </div>
+        )}
       </div>
-      
+
       <div className="w-full max-w-6xl mx-auto">
-          {/* Dashboard View */}
+        {/* Dashboard View */}
         {!showRegistration && !showHistory && !selectedVisitor && (
           <VisitorsDashboard
             searchTerm={searchTerm}
@@ -941,17 +974,17 @@ const handlePrintTable = () => {
       {/* Password Modal (Always rendered but hidden by state) */}
       <PasswordModal
         showPasswordModal={showPasswordModal}
-        EnterPassword={EnterPassword} 
-        setPassword={setPassword}    
-        showPassword={showPassword} 
-        setShowPassword={setShowPassword} 
+        EnterPassword={EnterPassword}
+        setPassword={setPassword}
+        showPassword={showPassword}
+        setShowPassword={setShowPassword}
         password={password}
         message={message}
         messageType={messageType}
         setShowPasswordModal={setShowPasswordModal}
-        modalTitle={modalContext.title} 
-        modalDescription={modalContext.description}
-        submitButtonText={modalContext.submitText}
+        modalTitle={modalContext.title}
+        modalDescription={modalContext.description}
+        submitButtonText={modalContext.submitText}
       />
 
       {/* Missed Visit Correction Modal (Always rendered but hidden by state) */}

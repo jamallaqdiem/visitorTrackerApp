@@ -1,12 +1,11 @@
 const request = require("supertest");
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
-const createHistoryRouter = require("./display_history"); // Assuming the router file is named history_visits.js
+const createHistoryRouter = require("./display_history");
 
 // --- Mock Database Setup ---
 const mockDb = new sqlite3.Database(':memory:');
 mockDb.serialize(() => {
-    // Schema matching your server.js
     mockDb.run(`CREATE TABLE visitors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         first_name TEXT,
@@ -17,8 +16,10 @@ mockDb.serialize(() => {
     mockDb.run(`CREATE TABLE visits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         visitor_id INTEGER,
+        known_as TEXT,
         entry_time TEXT NOT NULL,
         exit_time TEXT,
+        address TEXT,
         phone_number TEXT,
         unit TEXT,
         reason_for_visit TEXT,
@@ -38,7 +39,6 @@ mockDb.serialize(() => {
 // Create a mock Express app to test the router
 const app = express();
 app.use(express.json());
-// We need to simulate the host and protocol for the photo path generation
 app.use((req, res, next) => {
     req.protocol = 'http';
     req.get = (header) => (header === 'host' ? 'test:3001' : null);
@@ -133,14 +133,12 @@ describe('GET /history', () => {
     });
 
     test('should filter records by name search query (case-insensitive)', async () => {
-        // Search for 'alice'
         const response = await request(app).get('/history?search=alice');
 
         expect(response.status).toBe(200);
         expect(response.body).toHaveLength(1);
         expect(response.body[0].first_name).toBe('Alice');
 
-        // Search for 'JOHNSON' (should be case-insensitive)
         const response2 = await request(app).get('/history?search=JOHNSON');
         expect(response2.status).toBe(200);
         expect(response2.body).toHaveLength(1);
@@ -148,7 +146,6 @@ describe('GET /history', () => {
     });
 
     test('should filter records by date range (start_date)', async () => {
-        // Filter starting from May 2nd (should only include Bob's visit)
         const response = await request(app).get('/history?start_date=2024-05-02');
 
         expect(response.status).toBe(200);
@@ -157,7 +154,6 @@ describe('GET /history', () => {
     });
 
     test('should filter records by date range (end_date)', async () => {
-        // Filter ending on May 1st (should only include Alice's visit)
         const response = await request(app).get('/history?end_date=2024-05-01');
 
         expect(response.status).toBe(200);
