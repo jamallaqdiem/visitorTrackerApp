@@ -846,7 +846,7 @@ function App() {
       {/* Header */}
       <div className="flex flex-col items-center justify-center w-full mb-8 relative">
         <h1 className="text-4xl font-extrabold text-blue-800 mb-2">
-          Welcome To Catherine Booth House
+          The Salvation Army Social Services
         </h1>
         <p className="text-lg text-gray-600 mb-4">
           Visitors and Guests Tracking
