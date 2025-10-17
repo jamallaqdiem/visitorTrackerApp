@@ -33,6 +33,8 @@ beforeAll(async () => {
         visitor_id INTEGER NOT NULL,
         entry_time TEXT NOT NULL,
         exit_time TEXT,
+        known_as TEXT,
+        address TEXT,
         phone_number TEXT,
         unit TEXT,
         reason_for_visit TEXT,

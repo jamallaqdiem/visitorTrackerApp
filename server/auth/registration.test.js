@@ -7,9 +7,7 @@ const createRegistrationRouter = require('./registration');
 const mockDb = new sqlite3.Database(':memory:');
 
 // --- Mock Upload Object ---
-// We MUST still define this because the router function signature requires it.
 const mockUpload = {
-    // These functions simply return dummy Express middleware (req, res, next) => next()
     single: () => (req, res, next) => next(),
     none: () => (req, res, next) => next(),
     array: () => (req, res, next) => next(),
@@ -19,7 +17,6 @@ const mockUpload = {
 
 
 mockDb.serialize(() => {
-    // Minimal required schema setup
     mockDb.run(`CREATE TABLE visitors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         first_name TEXT,
@@ -31,13 +28,14 @@ mockDb.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         visitor_id INTEGER,
         entry_time TEXT,
+        known_as TEXT,
+        address TEXT,
         phone_number TEXT,
         unit TEXT,
         reason_for_visit TEXT,
         type TEXT,
         company_name TEXT
     )`);
-    // Including dependents table to prevent schema errors in the actual router logic
     mockDb.run(`CREATE TABLE dependents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         full_name TEXT,
@@ -48,12 +46,10 @@ mockDb.serialize(() => {
 
 // Create a mock Express app
 const app = express();
-// IMPORTANT: Enable JSON parsing for our tests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Attach the registration router using the mock upload middleware
-// The path here is assumed to be '/', matching the test's .post('/')
 app.use('/', createRegistrationRouter(mockDb, mockUpload)); 
 
 // Clean up the test database after each test
@@ -69,6 +65,8 @@ describe('POST /', () => {
         const registrationData = {
             first_name: 'Jamal',
             last_name: 'Laqdiem',
+            known_as: 'miky',
+            address: '700 london road Portsmouth Po30 5ur',
             phone_number: '022277',
             unit: '101',
             reason_for_visit: 'Meeting',

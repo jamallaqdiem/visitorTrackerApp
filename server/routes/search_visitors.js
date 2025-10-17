@@ -24,6 +24,8 @@ function createSearchVisitorsRouter(db) {
         T1.last_name,
         T1.photo_path,
         T1.is_banned,
+        T2.known_as,
+        T2.address,
         T2.phone_number,
         T2.unit,
         T2.reason_for_visit,

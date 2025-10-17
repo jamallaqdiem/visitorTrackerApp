@@ -18,6 +18,8 @@ mockDb.serialize(() => {
     visitor_id INTEGER,
     entry_time TEXT,
     exit_time TEXT,
+    known_as,
+    address,
     phone_number TEXT,
     unit TEXT,
     reason_for_visit TEXT,
@@ -68,7 +70,7 @@ describe('POST /login', () => {
       mockDb.run(`INSERT INTO visitors (first_name, last_name, is_banned) VALUES ('Jamal', 'Laqdiem', 0)`, function(err) {
         if (err) return reject(err);
         const visitorId = this.lastID;
-        mockDb.run(`INSERT INTO visits (visitor_id, entry_time, phone_number, unit, type) VALUES (?, ?, '07777890', '101', 'Visitor')`, [visitorId, new Date().toISOString()], (err) => {
+        mockDb.run(`INSERT INTO visits (visitor_id, entry_time, known_as, address, phone_number, unit, type) VALUES (?, ?, 'miky', '700 london road Portsmouth Po30 7ur', '07777890', '101', 'Visitor')`, [visitorId, new Date().toISOString()], (err) => {
           if (err) return reject(err);
           resolve(visitorId);
         });
@@ -77,7 +79,7 @@ describe('POST /login', () => {
 
     const response = await request(app)
       .post('/login')
-      .send({ id: 1 }); // We know the ID will be 1 from the mock insert
+      .send({ id: 1 }); 
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('message', 'Visitor signed in successfully!');

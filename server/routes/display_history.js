@@ -63,8 +63,10 @@ function createHistoryRouter(db) {
             T1.photo_path,
             T1.is_banned,
             T2.id AS visit_id,
+            T2.known_as,
             T2.entry_time,
             T2.exit_time,
+            T2.address,
             T2.phone_number,
             T2.unit,
             T2.reason_for_visit,
@@ -85,7 +87,8 @@ function createHistoryRouter(db) {
         ${whereClause}
         GROUP BY 
             T1.id, T2.id, T1.first_name, T1.last_name, T1.photo_path, T1.is_banned, 
-            T2.entry_time, T2.exit_time, T2.phone_number, T2.unit, 
+            T2.known_as, T2.entry_time, T2.exit_time, 
+            T2.address, T2.phone_number, T2.unit, 
             T2.reason_for_visit, T2.company_name, T2.type
         ORDER BY T2.entry_time DESC
     `;

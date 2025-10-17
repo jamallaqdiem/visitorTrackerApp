@@ -18,6 +18,8 @@ mockDb.serialize(() => {
     visitor_id INTEGER,
     entry_time TEXT,
     exit_time TEXT,
+    known_as TEXT,
+    address TEXT,
     phone_number TEXT,
     unit TEXT,
     reason_for_visit TEXT,

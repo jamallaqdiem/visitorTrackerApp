@@ -51,67 +51,6 @@ const VisitorRegistrationForm = ({
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* First Name */}
-          <div>
-            <PersonIcon className="w-5 h-5" />
-            <label className="block text-sm font-medium text-gray-700">
-              First Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleInputChange}
-              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
-              required
-            />
-          </div>
-
-          {/* Last Name */}
-          <div>
-            <PersonIcon className="w-5 h-5" />
-            <label className="block text-sm font-medium text-gray-700">
-              Last Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
-              required
-            />
-          </div>
-
-          {/* Phone Number */}
-          <div>
-            <PhoneIcon className="w-5 h-5" />
-            <label className="block text-sm font-medium text-gray-700">
-              Phone Number
-            </label>
-            <input
-              type="text"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleInputChange}
-              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
-            />
-          </div>
-
-          {/* Unit */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Flat/Unit{" "}
-            </label>
-            <input
-              type="text"
-              name="unit"
-              value={formData.unit}
-              onChange={handleInputChange}
-              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
-            />
-          </div>
-
           {/* Visitor Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -144,8 +83,97 @@ const VisitorRegistrationForm = ({
               />
             </div>
           )}
+          {/* First Name */}
+          <div>
+            <PersonIcon className="w-5 h-5" />
+            <label className="block text-sm font-medium text-gray-700">
+              First Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
+              required
+            />
+          </div>
 
-          {/* Reason for Visit (Full Width on small screens) */}
+          {/* Last Name */}
+          <div>
+            <PersonIcon className="w-5 h-5" />
+            <label className="block text-sm font-medium text-gray-700">
+              Last Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
+              required
+            />
+          </div>
+          {/* Know by other names*/}
+          {["visitor"].includes(formData.visitorType) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Known by any other Names
+              </label>
+              <input
+                type="text"
+                name="knownAs"
+                value={formData.knownAs}
+                onChange={handleInputChange}
+                className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
+              />
+            </div>
+          )}
+          {/* address*/}
+          {["visitor"].includes(formData.visitorType) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Address
+              </label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
+              />
+            </div>
+          )}
+          {/* Phone Number */}
+          <div>
+            <PhoneIcon className="w-5 h-5" />
+            <label className="block text-sm font-medium text-gray-700">
+              Phone Number
+            </label>
+            <input
+              type="text"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
+            />
+          </div>
+
+          {/* Unit */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Flat/Unit{" "}
+            </label>
+            <input
+              type="text"
+              name="unit"
+              value={formData.unit}
+              onChange={handleInputChange}
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:border-purple-500 focus:ring-purple-500 transition-shadow"
+            />
+          </div>
+
+          {/* Reason for Visit  */}
           <div
             className={
               ["contractor", "professional"].includes(formData.visitorType)
@@ -235,68 +263,68 @@ const VisitorRegistrationForm = ({
           </div>
           {/* Additional Dependents */}
           {["visitor"].includes(formData.visitorType) && (
-          <div className="md:col-span-2 space-y-3">
-            <h4 className="text-lg font-semibold text-gray-800">
-              Additional Dependents
-            </h4>
-            <div className="space-y-3">
-              {dependents.map((dependent, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col sm:flex-row gap-3 items-center p-3 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <input
-                    type="text"
-                    name="full_name"
-                    placeholder="Dependent's Name"
-                    value={dependent.full_name}
-                    onChange={(e) => handleDependentChange(index, e)}
-                    className="flex-grow p-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                  <input
-                    type="number"
-                    name="age"
-                    min="0"
-                    placeholder="Age"
-                    value={dependent.age}
-                    onChange={(e) => handleDependentChange(index, e)}
-                    className="w-full sm:w-20 p-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveDependent(index)}
-                    className="w-full sm:w-auto px-4 py-2 text-sm bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors shadow-sm"
+            <div className="md:col-span-2 space-y-3">
+              <h4 className="text-lg font-semibold text-gray-800">
+                Additional Dependents
+              </h4>
+              <div className="space-y-3">
+                {dependents.map((dependent, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col sm:flex-row gap-3 items-center p-3 bg-gray-50 rounded-lg border border-gray-200"
                   >
-                    Remove
-                  </button>
-                       {" "}
-                  <div className="mt-6">
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isAgreementCheckedChild}
-                        onChange={(e) =>
-                          setIsAgreementCheckedChild(e.target.checked)
-                        }
-                        className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                      />
-                      <span className="text-base font-medium  text-red-500">
-                        * Child Agreement & Disclaimer form completed and signed
-                        (Staff Check)
-                      </span>
-                    </label>
+                    <input
+                      type="text"
+                      name="full_name"
+                      placeholder="Dependent's Name"
+                      value={dependent.full_name}
+                      onChange={(e) => handleDependentChange(index, e)}
+                      className="flex-grow p-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <input
+                      type="number"
+                      name="age"
+                      min="0"
+                      placeholder="Age"
+                      value={dependent.age}
+                      onChange={(e) => handleDependentChange(index, e)}
+                      className="w-full sm:w-20 p-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDependent(index)}
+                      className="w-full sm:w-auto px-4 py-2 text-sm bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors shadow-sm"
+                    >
+                      Remove
+                    </button>
+                         {" "}
+                    <div className="mt-6">
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isAgreementCheckedChild}
+                          onChange={(e) =>
+                            setIsAgreementCheckedChild(e.target.checked)
+                          }
+                          className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        />
+                        <span className="text-base font-medium  text-red-500">
+                          * Child Agreement & Disclaimer form completed and
+                          signed (Staff Check)
+                        </span>
+                      </label>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleAddDependent}
-                className="flex items-center text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors mt-2 p-1 rounded-md hover:bg-purple-50"
-              >
-                + Add Dependent
-              </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleAddDependent}
+                  className="flex items-center text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors mt-2 p-1 rounded-md hover:bg-purple-50"
+                >
+                  + Add Dependent
+                </button>
+              </div>
             </div>
-          </div>
           )}
         </div>
         {message && (isError || isSuccess) && (
@@ -322,7 +350,8 @@ const VisitorRegistrationForm = ({
               className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
             />
             <span className="text-base font-medium  text-red-500">
-              * Agreement & Disclaimer form completed and signed (Staff Check)
+              * Visitor Agreement & Disclaimer form completed and signed (Staff
+              Check)
             </span>
           </label>
         </div>
