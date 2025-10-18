@@ -9,6 +9,7 @@ const multer = require("multer");
 const app = express();
 const PORT = 3001;
 
+const runDataComplianceCleanup = require("./routes/clean_data");
 const createRegistrationRouter = require("./auth/registration");
 const createVisitorsRouter = require("./routes/visitors");
 const createLoginRouter = require("./routes/login");
@@ -66,48 +67,96 @@ const upload = multer({
   },
 });
 
+// Define SQL commands 
+const visitorsSql = `CREATE TABLE IF NOT EXISTS visitors (
+  id INTEGER PRIMARY KEY,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  photo_path TEXT,
+  is_banned BOOLEAN DEFAULT 0
+)`;
+
+const visitsSql = `CREATE TABLE IF NOT EXISTS visits (
+  id INTEGER PRIMARY KEY,
+  visitor_id INTEGER NOT NULL,
+  entry_time TEXT NOT NULL,
+  exit_time TEXT,
+  known_as TEXT,
+  address TEXT,
+  phone_number TEXT,
+  unit TEXT NOT NULL,
+  reason_for_visit TEXT,
+  type TEXT NOT NULL,
+  company_name TEXT,
+  FOREIGN KEY (visitor_id) REFERENCES visitors(id)
+)`;
+
+const dependentsSql = `CREATE TABLE IF NOT EXISTS dependents (
+  id INTEGER PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  age INTEGER,
+  visit_id INTEGER NOT NULL,
+  FOREIGN KEY (visit_id) REFERENCES visits(id)
+)`;
+
+const auditLogsSql = `CREATE TABLE IF NOT EXISTS audit_logs (
+  id INTEGER PRIMARY KEY,
+  event_name TEXT NOT NULL,
+  timestamp TEXT NOT NULL,
+  status TEXT NOT NULL,
+  profiles_deleted INTEGER,
+  visits_deleted INTEGER,
+  dependents_deleted INTEGER
+)`;
+
 // Connect to SQLite database
 const db = new sqlite3.Database("database.db", (err) => {
   if (err) {
     console.error(err.message);
   } else {
     console.log("Connected to the database.");
-    // This is the visitors table
-    db.run(`CREATE TABLE IF NOT EXISTS visitors (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      first_name TEXT NOT NULL,
-      last_name TEXT NOT NULL,
-      photo_path TEXT,
-      is_banned BOOLEAN DEFAULT 0
-    )`);
 
-    // This is the new visits table 
-    db.run(`CREATE TABLE IF NOT EXISTS visits (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      visitor_id INTEGER NOT NULL,
-      entry_time TEXT NOT NULL,
-      exit_time TEXT,
-      known_as TEXT,
-      address TEXT,
-      phone_number TEXT,
-      unit TEXT NOT NULL,
-      reason_for_visit TEXT,
-      type TEXT NOT NULL,
-      company_name TEXT,
-      FOREIGN KEY (visitor_id) REFERENCES visitors(id)
-    )`);
+    db.serialize(() => {
+      // 1. Create Visitors table
+      db.run(visitorsSql, (err) => {
+        if (err) {
+          return console.error("Visitors Table Error (Fatal):", err.message);
+        }
 
-    // The dependents table is linked to the visits table
-    db.run(`CREATE TABLE IF NOT EXISTS dependents (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      full_name TEXT NOT NULL,
-      age INTEGER,
-      visit_id INTEGER NOT NULL,
-      FOREIGN KEY (visit_id) REFERENCES visits(id)
-    )`);
+        // 2. Create Visits table
+        db.run(visitsSql, (err) => {
+          if (err) {
+            return console.error("Visits Table Error (Fatal):", err.message);
+          }
+
+          // 3. Create Dependents table
+          db.run(dependentsSql, (err) => {
+            if (err) {
+              return console.error(
+                "Dependents Table Error (Fatal):",
+                err.message
+              );
+            }
+
+            // 4. Create Audit Logs table
+            db.run(auditLogsSql, (err) => {
+              if (err) {
+                return console.error(
+                  "Audit Logs Table Error (Fatal):",
+                  err.message
+                );
+              }
+              // Running cleanup job.
+              runDataComplianceCleanup(db);
+            });
+          });
+        });
+      });
+    });
   }
 });
 
+// Router usage
 app.use("/", createRegistrationRouter(db,upload));
 app.use("/", createVisitorsRouter(db));
 app.use("/", createLoginRouter(db));
