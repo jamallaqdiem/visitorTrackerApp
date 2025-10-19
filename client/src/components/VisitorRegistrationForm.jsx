@@ -340,7 +340,24 @@ const VisitorRegistrationForm = ({
             {message}
           </div>
         )}
-             {" "}
+
+        {["contractor"].includes(formData.visitorType) && (
+        <div className="mt-6">
+          <label className="flex items-center space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAgreementCheckedAdult}
+              onChange={(e) => setIsAgreementCheckedAdult(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+            />
+            <span className="text-base font-medium  text-red-500">
+              * Contractor H&S and Site Risk Assessment briefing completed and confirmed (Staff Check)
+            </span>
+          </label>
+        </div>
+        )}
+        
+        {["visitor","professional"].includes(formData.visitorType) && (
         <div className="mt-6">
           <label className="flex items-center space-x-3 cursor-pointer">
             <input
@@ -355,6 +372,8 @@ const VisitorRegistrationForm = ({
             </span>
           </label>
         </div>
+        )}
+
         {/* Form Actions */}
         <div className="flex justify-center space-x-4 pt-6 border-t">
           <button
