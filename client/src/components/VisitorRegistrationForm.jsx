@@ -45,6 +45,7 @@ const VisitorRegistrationForm = ({
     }, 50);
   };
 
+
   return (
     <div className="w-full max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-blue-100">
       <h2 className="text-3xl font-bold text-purple-700 mb-6 text-center">
@@ -88,7 +89,7 @@ const VisitorRegistrationForm = ({
           {/* First Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-            <PersonIcon className="w-5 h-5" />
+              <PersonIcon className="w-5 h-5" />
               First Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -103,9 +104,8 @@ const VisitorRegistrationForm = ({
 
           {/* Last Name */}
           <div>
-            
             <label className="block text-sm font-medium text-gray-700">
-            <PersonIcon className="w-5 h-5" />
+              <PersonIcon className="w-5 h-5" />
               Last Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -280,6 +280,7 @@ const VisitorRegistrationForm = ({
                       type="text"
                       name="full_name"
                       placeholder="Dependent's Name"
+                      required
                       value={dependent.full_name}
                       onChange={(e) => handleDependentChange(index, e)}
                       className="flex-grow p-2 border border-gray-300 rounded-lg text-sm"
@@ -289,6 +290,7 @@ const VisitorRegistrationForm = ({
                       name="age"
                       min="0"
                       placeholder="Age"
+                      required
                       value={dependent.age}
                       onChange={(e) => handleDependentChange(index, e)}
                       className="w-full sm:w-20 p-2 border border-gray-300 rounded-lg text-sm"
@@ -309,22 +311,6 @@ const VisitorRegistrationForm = ({
                 >
                   + Add Dependent
                 </button>
-                <div className="mt-6">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isAgreementCheckedChild}
-                      onChange={(e) =>
-                        setIsAgreementCheckedChild(e.target.checked)
-                      }
-                      className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                    />
-                    <span className="text-base font-medium  text-red-500">
-                      * Child Agreement & Disclaimer form completed and signed
-                      (Staff Check)
-                    </span>
-                  </label>
-                </div>
               </div>
             </div>
           )}
@@ -341,6 +327,22 @@ const VisitorRegistrationForm = ({
           >
             {message}
           </div>
+        )}
+        {["visitor"].includes(formData.visitorType) &&(dependents.length > 0 ) && (
+        <div className="mt-6">
+          <label className="flex items-center space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAgreementCheckedChild}
+              onChange={(e) => setIsAgreementCheckedChild(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+            />
+            <span className="text-base font-medium  text-red-500">
+              * Child Agreement & Disclaimer form completed and signed (Staff
+              Check)
+            </span>
+          </label>
+        </div>
         )}
 
         {["contractor"].includes(formData.visitorType) && (

@@ -44,7 +44,7 @@ const columns = [
   { key: "exit_time", label: "Check Out", sortable: false },
   { key: "address", label: "Address", sortable: false },
   { key: "phone_number", label: "Contact/Unit", sortable: false },
-  { key: "reason_for_visit", label: "Reason/Type", sortable: false },
+  { key: "reason_for_visit", label: "Type/Reason", sortable: false },
   { key: "dependents", label: "Dependents", sortable: false },
   { key: "is_banned", label: "Status", sortable: false },
   {
@@ -349,13 +349,13 @@ function HistoryDashboard({
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         visit.mandatory_acknowledgment_taken
-                          ? " text-red-600"
-                          : " text-blue-800"
+                          ? " text-blue-800"
+                          : " text-red-600"
                       }`}
                     >
                       {visit.mandatory_acknowledgment_taken
-                        ? "PENDING"
-                        : "COMPLETED"}
+                        ? "COMPLETED"
+                        : "PENDING"}
                          
                     </span>
                   </td>
