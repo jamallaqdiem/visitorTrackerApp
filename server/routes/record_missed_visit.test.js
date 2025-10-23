@@ -58,7 +58,8 @@ mockDb.serialize(() => {
         unit TEXT NOT NULL,
         reason_for_visit TEXT,
         type TEXT NOT NULL,
-        company_name TEXT
+        company_name TEXT,
+        mandatory_acknowledgment_taken TEXT
     )`);
     // 3. Dependents table (included for completeness, though not used in this router)
     mockDb.run(`CREATE TABLE dependents (
@@ -85,6 +86,7 @@ const sampleVisitDetails = {
     phone_number: '555-1212',
     type: 'Guest',
     reason_for_visit: 'Meeting',
+    mandatory_acknowledgment_taken: 'text'
 };
 
 beforeEach(async () => {
@@ -93,8 +95,8 @@ beforeEach(async () => {
     
     // 2. Insert a valid, complete previous visit record.
     await runDB(mockDb, `
-        INSERT INTO visits (visitor_id, entry_time, exit_time, known_as, address, phone_number, unit, reason_for_visit, type) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        INSERT INTO visits (visitor_id, entry_time, exit_time, known_as, address, phone_number, unit, reason_for_visit, type, mandatory_acknowledgment_taken) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
         [
             testVisitorId, 
             new Date(Date.now() - 3600000).toISOString(), // Entry: 1 hour ago
@@ -104,7 +106,8 @@ beforeEach(async () => {
             sampleVisitDetails.phone_number,
             sampleVisitDetails.unit,
             sampleVisitDetails.reason_for_visit,
-            sampleVisitDetails.type
+            sampleVisitDetails.type,
+            sampleVisitDetails.mandatory_acknowledgment_taken
         ]);
 });
 

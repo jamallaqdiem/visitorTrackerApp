@@ -7,6 +7,10 @@ const VisitorDetailsForm = ({
   handleExportFile,
   handleLogin,
   handleUpdate,
+  isAgreementCheckedAdult,
+  setIsAgreementCheckedAdult,
+  isAgreementCheckedChild,
+  setIsAgreementCheckedChild,
   handleBan,
   handleUnbanClick,
   message,
@@ -15,8 +19,7 @@ const VisitorDetailsForm = ({
   handleRecordMissedVisitClick,
 }) => {
   if (!selectedVisitor) return null;
-
-  const isBanned = selectedVisitor.is_banned === 1;
+ 
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -64,6 +67,22 @@ const VisitorDetailsForm = ({
   };
 
   const dependents = editFormData.additional_dependents || [];
+  const validDependents = dependents.filter(
+    (dep) => dep.full_name && dep.full_name.trim() !== ""
+);
+ const isBanned = selectedVisitor.is_banned === 1;
+  const isAgreementRequired = [
+    "contractor",
+    "visitor",
+    "professional",
+  ].includes(editFormData.type);
+  
+  const isAdultNotAcknowledged = isAgreementRequired && !isAgreementCheckedAdult;
+  const isChildAgreementRequired =
+    validDependents.length > 0 && editFormData.type === "visitor";
+  const isChildNotAcknowledged =
+    isChildAgreementRequired && !isAgreementCheckedChild;
+  const shouldDisable = isBanned || isAdultNotAcknowledged || isChildNotAcknowledged;
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-blue-100">
@@ -272,27 +291,76 @@ const VisitorDetailsForm = ({
           {message}
         </div>
       )}
+    {isChildAgreementRequired && (
+      <div className="mt-6">
+        <label className="flex items-center space-x-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isAgreementCheckedChild}
+            onChange={(e) => setIsAgreementCheckedChild(e.target.checked)}
+            className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+          />
+          <span className="text-base font-medium  text-red-500">
+            * Child Agreement & Disclaimer form completed and signed (Staff
+            Check)
+          </span>
+        </label>
+      </div>
+      )}
+
+      {["contractor"].includes(editFormData.type) && (
+        <div className="mt-6">
+          <label className="flex items-center space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAgreementCheckedAdult}
+              onChange={(e) => setIsAgreementCheckedAdult(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+            />
+            <span className="text-base font-medium  text-red-500">
+              * Contractor H&S and Site Risk Assessment briefing completed and
+              confirmed (Staff Check)
+            </span>
+          </label>
+        </div>
+      )}
+      {["visitor", "professional"].includes(editFormData.type) && (
+        <div className="mt-6">
+          <label className="flex items-center space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAgreementCheckedAdult}
+              onChange={(e) => setIsAgreementCheckedAdult(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+            />
+            <span className="text-base font-medium  text-red-500">
+              * Visitor Agreement & Disclaimer form completed and signed (Staff
+              Check)
+            </span>
+          </label>
+        </div>
+      )}
       {/* Action Buttons */}
       <div className="flex flex-wrap justify-center gap-4 pt-8 border-t mt-8">
         <button
           onClick={handleRecordMissedVisitClick}
           className={`px-8 py-3 font-bold rounded-lg transition-all shadow-xl ${
-            isBanned
+            shouldDisable
               ? "bg-gray-400 text-gray-700 cursor-not-allowed"
               : "bg-yellow-700 -600 text-white hover:bg-yellow-900 -700"
           }`}
-          disabled={isBanned}
+          disabled={shouldDisable}
         >
           Correct Missed Entry
         </button>
         <button
           onClick={() => handleLogin(selectedVisitor.id)}
           className={`px-8 py-3 font-bold rounded-lg transition-all shadow-xl ${
-            isBanned
+            shouldDisable
               ? "bg-gray-400 text-gray-700 cursor-not-allowed"
               : "bg-blue-600 text-white hover:bg-blue-700"
           }`}
-          disabled={isBanned}
+          disabled={shouldDisable}
         >
           Sign In
         </button>
@@ -315,11 +383,11 @@ const VisitorDetailsForm = ({
         <button
           onClick={handleUpdate}
           className={`px-8 py-3 font-bold rounded-lg transition-all shadow-xl whitespace-nowrap ${
-            isBanned
+            shouldDisable
               ? "bg-gray-400 text-gray-700 cursor-not-allowed"
               : "bg-green-600 text-white hover:bg-green-700"
           }`}
-          disabled={isBanned}
+          disabled={shouldDisable}
         >
           Save Updates & Sign In
         </button>

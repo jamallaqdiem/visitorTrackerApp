@@ -27,6 +27,7 @@ function createVisitorsRouter(db) {
         T2.reason_for_visit,
         T2.company_name,
         T2.type,
+        T2.mandatory_acknowledgment_taken,
         GROUP_CONCAT(json_object('full_name', T3.full_name, 'age', T3.age)) AS additional_dependents
     FROM visitors AS T1
     JOIN visits AS T2
@@ -48,7 +49,8 @@ function createVisitorsRouter(db) {
         T2.unit,
         T2.reason_for_visit,
         T2.company_name,
-        T2.type
+        T2.type,
+        T2.mandatory_acknowledgment_taken
     ORDER BY T2.entry_time DESC
 `;
     db.all(query, [], (err, rows) => {

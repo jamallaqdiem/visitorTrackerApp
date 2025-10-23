@@ -25,6 +25,7 @@ mockDb.serialize(() => {
         reason_for_visit TEXT,
         company_name TEXT,
         type TEXT,
+        mandatory_acknowledgment_taken,
         FOREIGN KEY (visitor_id) REFERENCES visitors(id)
     )`);
     mockDb.run(`CREATE TABLE dependents (
