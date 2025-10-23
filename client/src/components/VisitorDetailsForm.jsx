@@ -243,6 +243,7 @@ const VisitorDetailsForm = ({
                       type="text"
                       name="full_name"
                       placeholder="Dependent's Name"
+                      required
                       value={dependent.full_name || ""}
                       onChange={(e) => handleDependentEditChange(index, e)}
                       className="flex-grow p-2 border border-gray-300 rounded-lg text-sm"
@@ -252,6 +253,7 @@ const VisitorDetailsForm = ({
                       min="0"
                       name="age"
                       placeholder="Age"
+                      required
                       value={dependent.age || ""}
                       onChange={(e) => handleDependentEditChange(index, e)}
                       className="w-full sm:w-20 p-2 border border-gray-300 rounded-lg text-sm"
