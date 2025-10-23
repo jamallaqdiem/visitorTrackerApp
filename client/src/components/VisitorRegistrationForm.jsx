@@ -1,5 +1,12 @@
 import React, { useRef, useState } from "react";
 import { CameraIcon, PersonIcon, PhoneIcon } from "./IconComponents";
+import Webcam from "react-webcam";
+
+const videoConstraints = {
+  width: 300,
+  height: 300,
+  facingMode: "user", // or "environment" for the rear camera
+};
 
 const VisitorRegistrationForm = ({
   message,
@@ -21,30 +28,44 @@ const VisitorRegistrationForm = ({
   handleCancelRegistration,
 }) => {
   const fileInputRef = useRef(null);
+  const webcamRef = useRef(null);
   const [showPhotoChoice, setShowPhotoChoice] = useState(false);
   const [captureMode, setCaptureMode] = useState(null);
-  const [inputKey, setInputKey] = useState(0);
+  const [capturedImage, setCapturedImage] = useState(null);
   const isError = messageType === "error" && message;
   const isSuccess = messageType === "success" && message;
 
-  const handlePhotoChoice = (mode) => {
-    // 1. Determine the required capture attribute value
-    let newCaptureMode = null;
-    if (mode === "camera") {
-      newCaptureMode = "user";
+  // Function to take the photo from the webcam
+  const capture = () => {
+    if (webcamRef.current) {
+      const imageSrc = webcamRef.current.getScreenshot();
+      setCapturedImage(imageSrc); // Storing the Base64 image
     }
-    // 2. Update state to trigger re-render of the input element with the new attributes
-    setCaptureMode(newCaptureMode);
-    setInputKey((prevKey) => prevKey + 1);
-
-    setTimeout(() => {
-      if (fileInputRef.current) {
-        fileInputRef.current.click();
-      }
-      setShowPhotoChoice(false);
-    }, 50);
   };
 
+  //converting the Base64 image
+  const dataURLtoFile = (dataurl, filename) => {
+    const arr = dataurl.split(",");
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+  
+  //handle the actual file selection for "Upload File"
+  const handleFileClick = () => {
+    setCaptureMode(null);
+    fileInputRef.current.click();
+  };
+  // Function to handle the image once a choice is made
+  const finalizePhotoSelection = () => {
+    setShowPhotoChoice(false);
+    setCaptureMode(null);
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-blue-100">
@@ -202,13 +223,12 @@ const VisitorRegistrationForm = ({
           <div className="md:col-span-1 flex flex-col items-center space-y-3">
                        {" "}
             <label className="text-sm font-medium text-gray-700">
-                 Visitor Photo 
+                 Visitor Photo ID
             </label>
-             
             <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-inner">
-              {photoPreviewUrl ? (
+              {capturedImage || photoPreviewUrl ? (
                 <img
-                  src={photoPreviewUrl}
+                  src={capturedImage || photoPreviewUrl}
                   alt="Photo Preview"
                   className="w-full h-full object-cover"
                 />
@@ -216,25 +236,30 @@ const VisitorRegistrationForm = ({
                 <PersonIcon className="w-16 h-16 text-gray-500" />
               )}
             </div>
-                       {/* 1. Button to show/hide the choice options */}
+            {/* 1. Button to show/hide the choice options */}
             <button
               type="button"
-              onClick={() => setShowPhotoChoice((prev) => !prev)}
+              onClick={() => {
+                setShowPhotoChoice((prev) => !prev);
+                setCaptureMode(null);
+                setCapturedImage(null);
+              }}
               className="flex items-center justify-center space-x-2 px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-md hover:bg-purple-600 cursor-pointer transition-colors"
             >
               <CameraIcon className="w-5 h-5" />
               <span>
-                {showPhotoChoice ? "Cancel Choice" : "Select Photo Source"}
+                {showPhotoChoice ? "Close Photo Options" : "Select Photo ID"}
               </span>
             </button>
             <input
               id="photo-upload"
-              key={inputKey}
               type="file"
               accept="image/*"
-              {...(captureMode ? { capture: captureMode } : {})}
               ref={fileInputRef}
-              onChange={handlePhotoChange}
+              onChange={(e) => {
+                handlePhotoChange(e);
+                finalizePhotoSelection();
+              }}
               style={{
                 position: "absolute",
                 width: "0px",
@@ -243,23 +268,79 @@ const VisitorRegistrationForm = ({
                 pointerEvents: "none",
               }}
             />
-            {/* 3. Photo Choice Buttons - Visible when state is true */}
+            {/* 3. Photo Choice View - Visible when showPhotoChoice is true */}
             {showPhotoChoice && (
-              <div className="flex justify-center gap-2 w-full p-2 bg-purple-50 rounded-lg shadow-inner border border-purple-200">
-                <button
-                  type="button"
-                  onClick={() => handlePhotoChoice("camera")}
-                  className="flex-1 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Take Photo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePhotoChoice("upload")}
-                  className="flex-1 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                  Upload File
-                </button>
+              <div className="w-full p-3 bg-purple-50 rounded-lg shadow-inner border border-purple-200 space-y-3">
+                {/* Webcam View and Capture Button */}
+                {captureMode === "camera" && (
+                  <div className="flex flex-col items-center space-y-2">
+                    <Webcam
+                      audio={false}
+                      height={300}
+                      ref={webcamRef}
+                      screenshotFormat="image/*"
+                      width={300}
+                      videoConstraints={videoConstraints}
+                      className="rounded-lg border border-purple-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={capture}
+                      className="w-full py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Take Photo
+                    </button>
+                    {/* If an image is captured, allowing the user to confirm and use it */}
+                    {capturedImage && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // convert the Base64 image
+                          // into a File object and calling handlePhotoChange
+                          const filename = `${formData.firstName}_${
+                            formData.lastName
+                          }_${Date.now()}.jpeg`;
+                          const webcamFile = dataURLtoFile(
+                            capturedImage,
+                            filename
+                          );
+                          // Creating a synthetic event object to pass the File to handlePhotoChange
+                          const syntheticEvent = {
+                            target: {
+                              files: [webcamFile],
+                            },
+                          };
+                          handlePhotoChange(syntheticEvent);
+                          finalizePhotoSelection();
+                        }}
+                        className="w-full py-2 text-sm font-medium bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors"
+                      >
+                        Use This Photo
+                      </button>
+                    )}
+                  </div>
+                )}
+                {/* Photo Source Buttons */}
+                <div className="flex justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCaptureMode("camera")}
+                    className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      captureMode === "camera"
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    Use Camera
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleFileClick}
+                    className="flex-1 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    Upload File
+                  </button>
+                </div>
               </div>
             )}
                {" "}
@@ -328,22 +409,23 @@ const VisitorRegistrationForm = ({
             {message}
           </div>
         )}
-        {["visitor"].includes(formData.visitorType) &&(dependents.length > 0 ) && (
-        <div className="mt-6">
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isAgreementCheckedChild}
-              onChange={(e) => setIsAgreementCheckedChild(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-            />
-            <span className="text-base font-medium  text-red-500">
-              * Child Agreement & Disclaimer form completed and signed (Staff
-              Check)
-            </span>
-          </label>
-        </div>
-        )}
+        {["visitor"].includes(formData.visitorType) &&
+          dependents.length > 0 && (
+            <div className="mt-6">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAgreementCheckedChild}
+                  onChange={(e) => setIsAgreementCheckedChild(e.target.checked)}
+                  className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                />
+                <span className="text-base font-medium  text-red-500">
+                  * Child Agreement & Disclaimer form completed and signed
+                  (Staff Check)
+                </span>
+              </label>
+            </div>
+          )}
 
         {["contractor"].includes(formData.visitorType) && (
           <div className="mt-6">
