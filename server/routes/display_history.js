@@ -72,7 +72,7 @@ function createHistoryRouter(db) {
             T2.reason_for_visit,
             T2.company_name,
             T2.type,
-            -- MANDATORY: Use string concatenation to assemble dependent data into a valid JSON array string
+            T2.mandatory_acknowledgment_taken,
             GROUP_CONCAT(
                 '{' 
                 || '"full_name":"' || T3.full_name || '",' 
@@ -89,7 +89,7 @@ function createHistoryRouter(db) {
             T1.id, T2.id, T1.first_name, T1.last_name, T1.photo_path, T1.is_banned, 
             T2.known_as, T2.entry_time, T2.exit_time, 
             T2.address, T2.phone_number, T2.unit, 
-            T2.reason_for_visit, T2.company_name, T2.type
+            T2.reason_for_visit, T2.company_name, T2.type, T2.mandatory_acknowledgment_taken
         ORDER BY T2.entry_time DESC
     `;
 

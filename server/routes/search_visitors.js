@@ -31,6 +31,7 @@ function createSearchVisitorsRouter(db) {
         T2.reason_for_visit,
         T2.company_name,
         T2.type,
+        T2.mandatory_acknowledgment_taken,
         GROUP_CONCAT(json_object('full_name', T3.full_name, 'age', T3.age), ',') AS dependents_json
       FROM visitors AS T1
       LEFT JOIN (

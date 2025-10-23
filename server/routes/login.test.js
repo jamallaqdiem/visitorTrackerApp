@@ -24,7 +24,8 @@ mockDb.serialize(() => {
     unit TEXT,
     reason_for_visit TEXT,
     type TEXT,
-    company_name TEXT
+    company_name TEXT,
+    mandatory_acknowledgment_taken TEXT
   )`);
   mockDb.run(`CREATE TABLE dependents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +71,7 @@ describe('POST /login', () => {
       mockDb.run(`INSERT INTO visitors (first_name, last_name, is_banned) VALUES ('Jamal', 'Laqdiem', 0)`, function(err) {
         if (err) return reject(err);
         const visitorId = this.lastID;
-        mockDb.run(`INSERT INTO visits (visitor_id, entry_time, known_as, address, phone_number, unit, type) VALUES (?, ?, 'miky', '700 london road Portsmouth Po30 7ur', '07777890', '101', 'Visitor')`, [visitorId, new Date().toISOString()], (err) => {
+        mockDb.run(`INSERT INTO visits (visitor_id, entry_time, known_as, address, phone_number, unit, type, mandatory_acknowledgment_taken) VALUES (?, ?, 'miky', '700 london road Portsmouth Po30 7ur', '07777890', '101', 'Visitor', 'true')`, [visitorId, new Date().toISOString()], (err) => {
           if (err) return reject(err);
           resolve(visitorId);
         });

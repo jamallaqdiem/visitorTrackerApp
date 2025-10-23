@@ -40,6 +40,7 @@ beforeAll(async () => {
         reason_for_visit TEXT,
         company_name TEXT,
         type TEXT,
+        mandatory_acknowledgment_taken TEXT,
         FOREIGN KEY (visitor_id) REFERENCES visitors(id)
     )`);
     await runDb(`CREATE TABLE dependents (

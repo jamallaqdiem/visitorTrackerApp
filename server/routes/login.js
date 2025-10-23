@@ -26,6 +26,7 @@ function createLoginRouter(db) {
         T2.reason_for_visit,
         T2.type,
         T2.company_name,
+        T2.mandatory_acknowledgment_taken,
         GROUP_CONCAT(json_object('full_name', T3.full_name, 'age', T3.age), ',') AS dependents_json
         FROM visitors AS T1 
     LEFT JOIN (
@@ -70,8 +71,8 @@ function createLoginRouter(db) {
       }
       // Step 2: Insert a new visit record.
       const insertSql = `
-        INSERT INTO visits (visitor_id, entry_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO visits (visitor_id, entry_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name, mandatory_acknowledgment_taken)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
         id,
@@ -83,6 +84,7 @@ function createLoginRouter(db) {
         row.reason_for_visit,
         row.type,
         row.company_name,
+        row.mandatory_acknowledgment_taken,
       ];
 
       db.run(insertSql, params, function (err) {

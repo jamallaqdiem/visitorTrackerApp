@@ -12,6 +12,8 @@ const API_BASE_URL = "http://localhost:3001";
 const initialRegistrationForm = {
   firstName: "",
   lastName: "",
+  knownAs: "",
+  address: "",
   phoneNumber: "",
   unit: "",
   reasonForVisit: "",
@@ -37,6 +39,8 @@ function App() {
   const [regFormData, setRegFormData] = useState(initialRegistrationForm);
   const [regDependents, setRegDependents] = useState([]);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState(null);
+  const [isAgreementCheckedAdult, setIsAgreementCheckedAdult] = useState(false);
+  const [isAgreementCheckedChild, setIsAgreementCheckedChild] = useState(false);
 
   // --- History data State ---
   const [showHistory, setShowHistory] = useState(false);
@@ -53,6 +57,7 @@ function App() {
 
   // --- Visitor Details/Update Form State ---
   const [editFormData, setEditFormData] = useState({});
+  const [isDetailsAgreementChecked, setIsDetailsAgreementChecked] = useState(false);
 
   // --- Notification State (Global for forms and dashboard) ---
   const [message, setMessage] = useState("");
@@ -219,7 +224,7 @@ function App() {
       reason_for_visit: visitor.reason_for_visit || "",
       type: visitor.type || "visitor",
       company_name: visitor.company_name || "",
-      // Ensure dependents is an array, parsing if stored as JSON string
+      mandatory_acknowledgment_taken: visitor.mandatory_acknowledgment_taken || "",
       additional_dependents:
         visitor.dependents && Array.isArray(visitor.dependents)
           ? visitor.dependents
@@ -229,7 +234,9 @@ function App() {
     });
     setSearchResults([]);
     setSearchTerm("");
-    setShowRegistration(false); // Hide registration if it was shown
+    setShowRegistration(false); 
+    setIsAgreementCheckedAdult(false); 
+    setIsAgreementCheckedChild(false);
     showNotification("Visitor details loaded.", "blue");
   };
 
@@ -238,6 +245,8 @@ function App() {
     setRegFormData(initialRegistrationForm);
     setRegDependents([]);
     setPhotoPreviewUrl(null);
+    setIsAgreementCheckedAdult(false); 
+    setIsAgreementCheckedChild(false);
     setSelectedVisitor(null);
     setSearchResults([]);
     setSearchTerm("");
@@ -296,7 +305,10 @@ function App() {
     formData.append("reason_for_visit", regFormData.reasonForVisit);
     formData.append("type", regFormData.visitorType);
     formData.append("company_name", regFormData.companyName);
-
+    formData.append(
+  "mandatory_acknowledgment_taken", 
+  isAgreementCheckedAdult ? 1 : 0 
+);
     if (regFormData.photo) {
       formData.append("photo", regFormData.photo);
     }
@@ -327,6 +339,8 @@ function App() {
         setRegFormData(initialRegistrationForm);
         setRegDependents([]);
         setPhotoPreviewUrl(null);
+        setIsAgreementCheckedAdult(false)
+        setIsAgreementCheckedChild(false)
         handleCancelAction(); // Go back to dashboard
       }, 4000);
 
@@ -344,7 +358,6 @@ function App() {
   // 1.Handle Log In
   const handleLogin = async (id) => {
     if (!id || !selectedVisitor) return;
-
     if (selectedVisitor.is_banned === 1) {
       showNotification(
         "Visitor is banned and cannot check in. Please unban first.",
@@ -392,7 +405,6 @@ function App() {
   // 2.Handle Update Details & Log In (Re-register)
   const handleUpdateAndLogin = async () => {
     if (!selectedVisitor) return;
-
     if (selectedVisitor.is_banned === 1) {
       showNotification(
         "Visitor is banned and cannot sign in. Please unban first.",
@@ -425,6 +437,7 @@ function App() {
       reason_for_visit: editFormData.reason_for_visit,
       type: editFormData.type,
       company_name: editFormData.company_name,
+      mandatory_acknowledgment_taken: isAgreementCheckedAdult ? 1 : 0 ,
       additional_dependents: JSON.stringify(cleanedDependents),
     };
 
@@ -921,6 +934,10 @@ function App() {
             handleExportFile={handleExportData}
             handleLogin={handleLogin}
             handleUpdate={handleUpdateAndLogin}
+            isAgreementCheckedAdult={isAgreementCheckedAdult} 
+            setIsAgreementCheckedAdult={setIsAgreementCheckedAdult}
+            isAgreementCheckedChild={isAgreementCheckedChild}
+            setIsAgreementCheckedChild={setIsAgreementCheckedChild}
             handleBan={handleBan}
             handleUnbanClick={handleUnbanClick}
             handleRecordMissedVisitClick={handleRecordMissedVisitClick}
@@ -943,6 +960,10 @@ function App() {
             handleDependentChange={handleDependentChange}
             handleRemoveDependent={handleRemoveDependent}
             handleAddDependent={handleAddDependent}
+            isAgreementCheckedAdult={isAgreementCheckedAdult}
+            setIsAgreementCheckedAdult={setIsAgreementCheckedAdult}
+            isAgreementCheckedChild={isAgreementCheckedChild}
+            setIsAgreementCheckedChild={setIsAgreementCheckedChild}
             handleSubmit={handleNewVisitorRegistration}
             loadingRegistration={loadingRegistration}
             handleCancelRegistration={handleCancelAction}

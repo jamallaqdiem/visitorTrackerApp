@@ -20,6 +20,7 @@ function createUpdateVisitorRouter(db) {
       reason_for_visit,
       type,
       company_name,
+      mandatory_acknowledgment_taken,
       additional_dependents,
     } = req.body;
 
@@ -41,8 +42,8 @@ function createUpdateVisitorRouter(db) {
         // Insert a new visit record.
         const visitsSql = `
           INSERT INTO visits (
-            visitor_id, entry_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            visitor_id, entry_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name, mandatory_acknowledgment_taken
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         const entry_time = new Date().toISOString();
 
         db.run(
@@ -57,6 +58,7 @@ function createUpdateVisitorRouter(db) {
             reason_for_visit,
             type,
             company_name,
+            mandatory_acknowledgment_taken,
           ],
           function (err) {
             if (err) {

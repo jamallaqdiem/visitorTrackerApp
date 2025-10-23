@@ -12,6 +12,10 @@ const VisitorRegistrationForm = ({
   handleDependentChange,
   handleRemoveDependent,
   handleAddDependent,
+  isAgreementCheckedAdult,
+  setIsAgreementCheckedAdult,
+  isAgreementCheckedChild,
+  setIsAgreementCheckedChild,
   handleSubmit,
   loadingRegistration,
   handleCancelRegistration,
@@ -20,8 +24,6 @@ const VisitorRegistrationForm = ({
   const [showPhotoChoice, setShowPhotoChoice] = useState(false);
   const [captureMode, setCaptureMode] = useState(null);
   const [inputKey, setInputKey] = useState(0);
-  const [isAgreementCheckedAdult, setIsAgreementCheckedAdult] = useState(false);
-  const [isAgreementCheckedChild, setIsAgreementCheckedChild] = useState(false);
   const isError = messageType === "error" && message;
   const isSuccess = messageType === "success" && message;
 
@@ -85,8 +87,8 @@ const VisitorRegistrationForm = ({
           )}
           {/* First Name */}
           <div>
-            <PersonIcon className="w-5 h-5" />
             <label className="block text-sm font-medium text-gray-700">
+            <PersonIcon className="w-5 h-5" />
               First Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -101,8 +103,9 @@ const VisitorRegistrationForm = ({
 
           {/* Last Name */}
           <div>
-            <PersonIcon className="w-5 h-5" />
+            
             <label className="block text-sm font-medium text-gray-700">
+            <PersonIcon className="w-5 h-5" />
               Last Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -297,23 +300,6 @@ const VisitorRegistrationForm = ({
                     >
                       Remove
                     </button>
-                         {" "}
-                    <div className="mt-6">
-                      <label className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={isAgreementCheckedChild}
-                          onChange={(e) =>
-                            setIsAgreementCheckedChild(e.target.checked)
-                          }
-                          className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                        />
-                        <span className="text-base font-medium  text-red-500">
-                          * Child Agreement & Disclaimer form completed and
-                          signed (Staff Check)
-                        </span>
-                      </label>
-                    </div>
                   </div>
                 ))}
                 <button
@@ -323,6 +309,22 @@ const VisitorRegistrationForm = ({
                 >
                   + Add Dependent
                 </button>
+                <div className="mt-6">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isAgreementCheckedChild}
+                      onChange={(e) =>
+                        setIsAgreementCheckedChild(e.target.checked)
+                      }
+                      className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                    />
+                    <span className="text-base font-medium  text-red-500">
+                      * Child Agreement & Disclaimer form completed and signed
+                      (Staff Check)
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
           )}
@@ -342,36 +344,37 @@ const VisitorRegistrationForm = ({
         )}
 
         {["contractor"].includes(formData.visitorType) && (
-        <div className="mt-6">
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isAgreementCheckedAdult}
-              onChange={(e) => setIsAgreementCheckedAdult(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-            />
-            <span className="text-base font-medium  text-red-500">
-              * Contractor H&S and Site Risk Assessment briefing completed and confirmed (Staff Check)
-            </span>
-          </label>
-        </div>
+          <div className="mt-6">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAgreementCheckedAdult}
+                onChange={(e) => setIsAgreementCheckedAdult(e.target.checked)}
+                className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+              />
+              <span className="text-base font-medium  text-red-500">
+                * Contractor H&S and Site Risk Assessment briefing completed and
+                confirmed (Staff Check)
+              </span>
+            </label>
+          </div>
         )}
-        
-        {["visitor","professional"].includes(formData.visitorType) && (
-        <div className="mt-6">
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isAgreementCheckedAdult}
-              onChange={(e) => setIsAgreementCheckedAdult(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-            />
-            <span className="text-base font-medium  text-red-500">
-              * Visitor Agreement & Disclaimer form completed and signed (Staff
-              Check)
-            </span>
-          </label>
-        </div>
+
+        {["visitor", "professional"].includes(formData.visitorType) && (
+          <div className="mt-6">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAgreementCheckedAdult}
+                onChange={(e) => setIsAgreementCheckedAdult(e.target.checked)}
+                className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+              />
+              <span className="text-base font-medium  text-red-500">
+                * Visitor Agreement & Disclaimer form completed and signed
+                (Staff Check)
+              </span>
+            </label>
+          </div>
         )}
 
         {/* Form Actions */}

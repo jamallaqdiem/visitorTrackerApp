@@ -39,7 +39,7 @@ function createMissedVisitRouter(db) {
         // 4. Step 1: Find the details of the visitor's most recent visit.
         const selectSql = `
             SELECT 
-                known_as, address, phone_number, unit, reason_for_visit, type, company_name 
+                known_as, address, phone_number, unit, reason_for_visit, type, company_name, mandatory_acknowledgment_taken
             FROM visits 
             WHERE visitor_id = ? 
             ORDER BY entry_time DESC 
@@ -61,13 +61,14 @@ function createMissedVisitRouter(db) {
             const reasonForVisit = visitDetails.reason_for_visit || null;
             const type = visitDetails.type || "Visitor"; 
             const companyName = visitDetails.company_name || null;
+            const mandatoryTaken = visitDetails.mandatory_acknowledgment_taken || '--'
 
             // 5. Step 2: Insert the new historical record
             const insertSql = `
                 INSERT INTO visits (
-                    visitor_id, entry_time, exit_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name
+                    visitor_id, entry_time, exit_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name, mandatory_acknowledgment_taken
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             db.run(insertSql, 
@@ -81,7 +82,8 @@ function createMissedVisitRouter(db) {
                     unit, 
                     reasonForVisit, 
                     type, 
-                    companyName
+                    companyName,
+                    mandatoryTaken
                 ], 
                 function (err) {
                     if (err) {

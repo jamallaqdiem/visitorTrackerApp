@@ -38,15 +38,20 @@ const formatDate = (isoString) => {
 
 // --- Table Headers Configuration ---
 const columns = [
-  { key: "first_name", label: "Visitor Name", sortable: true },
-  { key: "known_as", label: "Known as", sortable: true },
-  { key: "entry_time", label: "Check In", sortable: true },
-  { key: "exit_time", label: "Check Out", sortable: true },
-  { key: "address", label: "Address", sortable: true },
-  { key: "phone_number", label: "Contact / Unit", sortable: false },
-  { key: "reason_for_visit", label: "Reason / Type", sortable: false },
+  { key: "first_name", label: "Name", sortable: false },
+  { key: "known_as", label: "Known as", sortable: false },
+  { key: "entry_time", label: "Check In", sortable: false },
+  { key: "exit_time", label: "Check Out", sortable: false },
+  { key: "address", label: "Address", sortable: false },
+  { key: "phone_number", label: "Contact/Unit", sortable: false },
+  { key: "reason_for_visit", label: "Reason/Type", sortable: false },
   { key: "dependents", label: "Dependents", sortable: false },
-  { key: "is_banned", label: "Status", sortable: true },
+  { key: "is_banned", label: "Status", sortable: false },
+  {
+    key: "mandatory_acknowledgment_taken",
+    label: "H&S Confirmed",
+    sortable: false,
+  },
 ];
 
 /**
@@ -95,7 +100,7 @@ function HistoryDashboard({
   });
 
   return (
-    <div className="p-4 md:p-8 font-['Inter'] print-report-container">
+    <div className="p-4 font-['Inter'] print-report-container max-w-max">
       <div className="mb-4 text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">
                     Visitors History Report        
@@ -104,7 +109,7 @@ function HistoryDashboard({
                     Generated on: {reportDate}       
         </p>
       </div>
-            {/* --- Connection Status and Fallback Message --- */}    
+            {/* --- Connection Status and Fallback Message --- */}   
       {statusMessage && (
         <div
           className={`mb-6 p-4 rounded-lg shadow-md flex items-center print:hidden ${
@@ -118,7 +123,7 @@ function HistoryDashboard({
         </div>
       )}
             {/* --- Filter Bar --- */}     
-      <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-indigo-50 rounded-xl shadow-inner print:hidden">
+      <div className="w-full flex flex-col md:flex-row gap-4 mb-6 p-4 bg-indigo-50 rounded-xl shadow-inner print:hidden">
                 {/* Search Input */}       
         <div className="relative flex-grow">
           <Search
@@ -198,8 +203,8 @@ function HistoryDashboard({
         </div>
       </div>
             {/*         --- Data Table ---         */}     
-      <div className="shadow-2xl rounded-xl max-w-full ">
-        <table className="w-full table-auto divide-y divide-gray-200">
+      <div className="shadow-2xl rounded-xl w-full px-0">
+        <table className=" table-auto divide-y divide-gray-200">
           <thead className="bg-indigo-700 text-white sticky top-0">
             <tr>
               {columns.map((col) => (
@@ -249,10 +254,10 @@ function HistoryDashboard({
                   key={visit.visit_id || visit.entry_time}
                   className="hover:bg-indigo-50 transition duration-100 avoid-break"
                 >
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900 max-w-[150px] align-middle">
+                  <td className="px-4 py-4 text-sm font-medium text-gray-900 break-words max-w-min align-middle">
                                         {visit.first_name} {visit.last_name}   
                   </td>
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900 max-w-[150px] align-middle">
+                  <td className="px-4 py-4 text-sm font-medium text-gray-900 max-w-[50px] align-middle">
                                         {visit.known_as || "--"}             
                   </td>
                                     {/* Entry Time  */}                 
@@ -272,8 +277,8 @@ function HistoryDashboard({
                         {formatDate(visit.exit_time).date}                     
                       </div>
                     ) : (
-                      <span className="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                Still Checked In             
+                      <span className="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 break-words max-w-[10rem]">
+                                                Still Checked In            
                       </span>
                     )}
                     {visit.exit_time && (
@@ -283,34 +288,34 @@ function HistoryDashboard({
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900 max-w-[150px] align-middle">
-                                        {visit.address || "--"}                
+                  <td className="px-4 py-4 text-sm font-medium text-gray-900 max-w-[50px] align-middle">
+                                        {visit.address || "--"}               
                   </td>
                                     {/* Phone / Unit */}                 
-                  <td className="px-4 py-4 text-sm text-gray-500 max-w-[100px] align-middle">
-                    <div className="font-semibold text-gray-700 whitespace-nowrap">
-                                            {visit.phone_number || "--"}    
+                  <td className="px-4 py-4 text-sm text-gray-500 break-words max-w-[50px] align-middle">
+                    <div className="font-semibold text-gray-700">
+                                            {visit.phone_number || "--"}   
                     </div>
                     <div className="text-xs text-gray-400">
                                             Unit/flat: {visit.unit || "--"}   
                     </div>
                   </td>
                                     {/* Reason / Type */}                 
-                  <td className="px-4 py-4 text-sm text-gray-500 max-w-[150px] align-middle">
+                  <td className="px-3 py-3 text-sm text-gray-500 break-words max-w-[50px] align-middle">
                     <div className="text-xs text-indigo-400 uppercase">
                                             {visit.type || "--"}         
                     </div>
-                    <div className="font-semibold whitespace-normal">
+                    <div className="font-semibold whitespace-normal max-w-full leading-snug">
                                             {visit.reason_for_visit || "--"}   
                     </div>
                     {visit.company_name && (
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-gray-400 whitespace-normal leading-tight">
                                                 Company: {visit.company_name}   
                       </div>
                     )}
                   </td>
                                     {/* Dependents */}                 
-                  <td className="px-4 py-4 text-sm text-gray-500 max-w-[150px] align-middle">
+                  <td className="px-4 py-4 text-sm text-gray-500 max-w-[100px] align-middle">
                     {visit.dependents && visit.dependents.length > 0 ? (
                       <ul className="pl-5 text-xs text-gray-600 list-none p-0 m-0">
                                                {" "}
@@ -331,13 +336,27 @@ function HistoryDashboard({
                     )}
                   </td>
                                     {/* Status */}                 
-                  <td className="px-4 py-4 text-sm max-w-[70px] align-middle">
+                  <td className="px-4 py-4 text-sm max-w-[10px] align-middle">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         visit.is_banned ? " text-red-600" : " text-blue-800"
                       }`}
                     >
-                      {visit.is_banned ? "BANNED" : "Clear"}    
+                      {visit.is_banned ? "BANNED" : "Clear"}   
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-sm max-w-sm align-middle">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        visit.mandatory_acknowledgment_taken
+                          ? " text-red-600"
+                          : " text-blue-800"
+                      }`}
+                    >
+                      {visit.mandatory_acknowledgment_taken
+                        ? "PENDING"
+                        : "COMPLETED"}
+                         
                     </span>
                   </td>
                 </tr>

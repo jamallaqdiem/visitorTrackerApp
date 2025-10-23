@@ -88,13 +88,14 @@ const visitsSql = `CREATE TABLE IF NOT EXISTS visits (
   reason_for_visit TEXT,
   type TEXT NOT NULL,
   company_name TEXT,
+  mandatory_acknowledgment_taken BOOLEAN DEFAULT 0,
   FOREIGN KEY (visitor_id) REFERENCES visitors(id)
 )`;
 
 const dependentsSql = `CREATE TABLE IF NOT EXISTS dependents (
   id INTEGER PRIMARY KEY,
   full_name TEXT NOT NULL,
-  age INTEGER,
+  age INTEGER NOT NULL,
   visit_id INTEGER NOT NULL,
   FOREIGN KEY (visit_id) REFERENCES visits(id)
 )`;

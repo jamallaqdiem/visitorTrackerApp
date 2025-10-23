@@ -24,7 +24,8 @@ mockDb.serialize(() => {
     unit TEXT,
     reason_for_visit TEXT,
     type TEXT,
-    company_name TEXT
+    company_name TEXT,
+    mandatory_acknowledgment_taken TEXT
   )`);
   mockDb.run(`CREATE TABLE dependents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

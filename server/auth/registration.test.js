@@ -34,7 +34,8 @@ mockDb.serialize(() => {
         unit TEXT,
         reason_for_visit TEXT,
         type TEXT,
-        company_name TEXT
+        company_name TEXT,
+        mandatory_acknowledgment_taken TEXT
     )`);
     mockDb.run(`CREATE TABLE dependents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,6 +73,7 @@ describe('POST /', () => {
             reason_for_visit: 'Meeting',
             type: 'Visitor',
             company_name: 'NHS',
+            mandatory_acknowledgment_taken: '1'
         };
 
         const response = await request(app)
