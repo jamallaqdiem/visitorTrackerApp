@@ -104,9 +104,10 @@ Copy the content from .env.example into your new .env file and fill in the value
 
 .env Example:
 
-PORT=3001
-ADMIN_PASSWORD=your_secure_admin_password
-# This password is used to authorize ban/unban actions
+MASTER_PASSWORD=admin_password_ban
+MASTER_PASSWORD2=admin_password_dat_history
+# The FIRST password is used to authorize ban/unban actions
+# THE SECOND password is used to authorize accessing the data history
 
 Run the backend server:
 
