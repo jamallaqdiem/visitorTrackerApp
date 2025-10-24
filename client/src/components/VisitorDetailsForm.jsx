@@ -67,9 +67,20 @@ const VisitorDetailsForm = ({
   };
 
   const dependents = editFormData.additional_dependents || [];
+const hasName = (dep) => dep.full_name && dep.full_name.trim() !== "";
+  const hasValidAge = (dep) => Number(dep.age) > 0;
+
   const validDependents = dependents.filter(
-    (dep) => dep.full_name && dep.full_name.trim() !== ""
-);
+    (dep) => hasName(dep) && hasValidAge(dep)
+  );
+  const isDependentDataIncomplete = dependents.some((dep) => {
+    const namePresent = hasName(dep);
+    const agePresent = hasValidAge(dep);
+
+    if (namePresent && !agePresent) return true;
+    if (!namePresent && agePresent) return true; 
+    return false;
+  });
  const isBanned = selectedVisitor.is_banned === 1;
   const isAgreementRequired = [
     "contractor",
@@ -82,7 +93,7 @@ const VisitorDetailsForm = ({
     validDependents.length > 0 && editFormData.type === "visitor";
   const isChildNotAcknowledged =
     isChildAgreementRequired && !isAgreementCheckedChild;
-  const shouldDisable = isBanned || isAdultNotAcknowledged || isChildNotAcknowledged;
+  const shouldDisable = isBanned || isAdultNotAcknowledged || isChildNotAcknowledged || isDependentDataIncomplete;
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-blue-100">
@@ -243,17 +254,15 @@ const VisitorDetailsForm = ({
                       type="text"
                       name="full_name"
                       placeholder="Dependent's Name"
-                      required
                       value={dependent.full_name || ""}
                       onChange={(e) => handleDependentEditChange(index, e)}
                       className="flex-grow p-2 border border-gray-300 rounded-lg text-sm"
                     />
                     <input
                       type="number"
-                      min="0"
+                      min="1"
                       name="age"
                       placeholder="Age"
-                      required
                       value={dependent.age || ""}
                       onChange={(e) => handleDependentEditChange(index, e)}
                       className="w-full sm:w-20 p-2 border border-gray-300 rounded-lg text-sm"
