@@ -607,7 +607,7 @@ function App() {
 
   // handle correcting the entry time
   const handleRecordMissedVisitClick = () => {
-       // Check if the visitor is already signed in before allowing the update & log-in.
+       // Check if the visitor is already signed in before allowing the correct missed entry time.
     const isAlreadySignedIn = visitors.some(
       (activeVisitor) => activeVisitor.id === selectedVisitor.id
     );
