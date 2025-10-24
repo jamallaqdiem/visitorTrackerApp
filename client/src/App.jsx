@@ -607,6 +607,18 @@ function App() {
 
   // handle correcting the entry time
   const handleRecordMissedVisitClick = () => {
+       // Check if the visitor is already signed in before allowing the update & log-in.
+    const isAlreadySignedIn = visitors.some(
+      (activeVisitor) => activeVisitor.id === selectedVisitor.id
+    );
+
+    if (isAlreadySignedIn) {
+      showNotification(
+        `${selectedVisitor.first_name} is already signed in!`,
+        "error"
+      );
+      return;
+    }
     if (!selectedVisitor) return;
     setMissedEntryTime("");
     setShowMissedVisitModal(true);
@@ -615,7 +627,7 @@ function App() {
 
   const confirmRecordMissedVisit = async () => {
     const visitorId = selectedVisitor?.id;
-
+ 
     if (!missedEntryTime) {
       showNotification("Entry time is required.", "error");
       return;
@@ -646,6 +658,7 @@ function App() {
     } catch (err) {
       console.error("Missed Visit Error:", err.message);
       showNotification(`Missed Visit Failed: ${err.message}`, "error");
+      showNotification("just test")
     }
   };
 
