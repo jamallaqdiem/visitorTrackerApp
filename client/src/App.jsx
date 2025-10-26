@@ -662,16 +662,6 @@ function App() {
     }
   };
 
-  // 5. Export Data
-  const handleExportData = () => {
-    if (!selectedVisitor?.id) return;
-    const url = `${API_BASE_URL}/export-visitors?id=${selectedVisitor.id}`;
-    window.open(url, "_blank");
-    showNotification(
-      `Export initiated for Visitor ID: ${selectedVisitor.id}`,
-      "blue"
-    );
-  };
 
   // 6. Sign Out (From Dashboard)
   const handleVisitorLogout = async (id) => {
@@ -951,7 +941,6 @@ function App() {
             selectedVisitor={selectedVisitor}
             editFormData={editFormData}
             setEditFormData={setEditFormData}
-            handleExportFile={handleExportData}
             handleLogin={handleLogin}
             handleUpdate={handleUpdateAndLogin}
             isAgreementCheckedAdult={isAgreementCheckedAdult} 
