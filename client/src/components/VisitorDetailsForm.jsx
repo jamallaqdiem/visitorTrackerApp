@@ -4,7 +4,6 @@ const VisitorDetailsForm = ({
   selectedVisitor,
   editFormData,
   setEditFormData,
-  handleExportFile,
   handleLogin,
   handleUpdate,
   isAgreementCheckedAdult,
@@ -104,13 +103,6 @@ const hasName = (dep) => dep.full_name && dep.full_name.trim() !== "";
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
         {/* Left Column - Export & Photo */}
         <div className="md:col-span-1 flex flex-col items-start space-y-4">
-          <button
-            onClick={handleExportFile}
-            className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-            disabled={!selectedVisitor.id}
-          >
-            Export Visit History (CSV)
-          </button>
           <div className="flex flex-col items-center w-full mt-6">
             <div className="w-60 h-60 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center border-4 border-gray-300 shadow-inner">
               <img
