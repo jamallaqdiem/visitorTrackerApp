@@ -657,8 +657,7 @@ function App() {
       }, 3000);
     } catch (err) {
       console.error("Missed Visit Error:", err.message);
-      showNotification(`Missed Visit Failed: ${err.message}`, "error");
-      showNotification("just test")
+      showNotification(`${err.message}`, "error");
     }
   };
 
