@@ -28,6 +28,11 @@
         padding: 0 !important;
         margin: 0 !important;
         box-shadow: none !important;
+        padding-top: 100px !important;
+    }
+
+  .print-show-logo {
+        visibility: visible !important;
     }
     
     thead {

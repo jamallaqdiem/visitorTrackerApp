@@ -870,12 +870,19 @@ function App() {
       <script src="https://cdn.tailwindcss.com"></script>
 
       {/* Header */}
-      <div className="flex flex-col items-center justify-center w-full mb-8 relative">
+      <div className="flex flex-col items-center w-full mb-8 relative">
+        <img
+      src="salvation-army-logo.png"
+      alt="The Salvation Army Red Shield Logo"
+      className="absolute left-0 top-0 w-28 h-28 object-contain print-show-logo"
+      // Fallback in case the image path is broken
+      onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/96x96/DA251C/ffffff?text=TSA'; }}
+    />
         <h1 className="text-4xl font-extrabold text-blue-800 mb-2">
           The Salvation Army Social Services
         </h1>
-        <p className="text-lg text-gray-600 mb-4">
-          Visitors and Guests Tracking
+        <p className="text-lg text-blue-950 mb-4">
+          Catherine Booth House Visitors Tracking
         </p>
         <button
           onClick={() => {
