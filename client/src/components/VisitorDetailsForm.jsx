@@ -304,8 +304,7 @@ const hasName = (dep) => dep.full_name && dep.full_name.trim() !== "";
             className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
           />
           <span className="text-base font-medium  text-red-500">
-            * Child Agreement & Disclaimer form completed and signed (Staff
-            Check)
+            * Child Agreement & Disclaimer form is on file (Staff Check)
           </span>
         </label>
       </div>
@@ -337,8 +336,7 @@ const hasName = (dep) => dep.full_name && dep.full_name.trim() !== "";
               className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
             />
             <span className="text-base font-medium  text-red-500">
-              * Visitor Agreement & Disclaimer form completed and signed (Staff
-              Check)
+            * Visitor Agreement & Disclaimer form is on file (Staff Check)
             </span>
           </label>
         </div>
