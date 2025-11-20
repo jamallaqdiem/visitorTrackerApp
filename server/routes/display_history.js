@@ -14,7 +14,8 @@ function createHistoryRouter(db) {
   router.post("/authorize-history", (req, res) => {
     const { password } = req.body;
 
-    const masterPassword = process.env.MASTER_PASSWORD2;
+    const masterPassword = process.env.MASTER_PASSWORD2? process.env.MASTER_PASSWORD2.trim()
+    : null;
 
     if (password === masterPassword) {
       return res

@@ -17,7 +17,8 @@ function createUnbanVisitorRouter(db) {
     const { password } = req.body;
 
     // Use the master password from the secure .env file
-    const masterPassword = process.env.MASTER_PASSWORD;
+    const masterPassword = process.env.MASTER_PASSWORD ? process.env.MASTER_PASSWORD.trim()
+    : null;
 
     // Check if the provided password matches the secure one
     if (password !== masterPassword) {

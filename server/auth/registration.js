@@ -27,7 +27,7 @@ function createRegistrationRouter(db, upload) {
       additional_dependents,
     } = req.body;
     const photo_path = req.file
-      ? `uploads/${path.basename(req.file.path)}`
+      ? path.join("uploads", path.basename(req.file.path))
       : null;
     // SQL to check if a visitor with the same full name exists
     const checkSql = `SELECT id FROM visitors WHERE first_name = ? AND last_name = ?`;

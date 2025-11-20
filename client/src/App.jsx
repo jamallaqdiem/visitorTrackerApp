@@ -861,7 +861,7 @@ function App() {
       {/* Header */}
       <div className="flex flex-col items-center w-full mb-8 relative">
         <img
-      src="salvation-army-logo.png"
+      src="Salvation-Army-logo.png"
       alt="The Salvation Army Red Shield Logo"
       className="absolute left-0 top-0 w-28 h-28 object-contain print-show-logo"
       // Fallback in case the image path is broken
