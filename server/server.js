@@ -1,3 +1,4 @@
+// server/server.js
 require('dotenv').config();
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
@@ -8,6 +9,13 @@ const fs = require("fs");
 const multer = require("multer");
 const app = express();
 const PORT = 3001;
+
+// IMPORT DB MANAGEMENT FUNCTIONS
+const { 
+  checkDatabaseIntegrity, 
+  restoreFromBackup, 
+  createBackup 
+} = require("./db_management"); 
 
 const runDataComplianceCleanup = require("./routes/clean_data");
 const createRegistrationRouter = require("./auth/registration");
@@ -21,50 +29,8 @@ const createSearchVisitorsRouter = require("./routes/search_visitors");
 const createMissedVisitRouter = require("./routes/record_missed_visit");
 const createHistoryRouter = require("./routes/display_history"); 
 
-// Middleware setup
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// Ensure the uploads directory exists
-const uploadsDir = "uploads";
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-
-// Set up multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
-  },
-});
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 20 * 1024 * 1024, // 20Mb size limit
-  },
-  fileFilter: (req, file, cb) => {
-    if (
-      file.mimetype === "image/jpeg" ||
-      file.mimetype === "image/png" ||
-      file.mimetype === "image/gif"
-    ) {
-      cb(null, true); // accept
-    } else {
-      cb(
-        new Error("Invalid file type, only JPEG, PNG, or GIF is allowed!"),
-        false
-      ); // reject
-    }
-  },
-});
+const DB_FILE_PATH = path.join(__dirname, "database.db");
+const UPLOADS_DIR_PATH = path.join(__dirname, "uploads");
 
 // Define SQL commands 
 const visitorsSql = `CREATE TABLE IF NOT EXISTS visitors (
@@ -109,65 +75,143 @@ const auditLogsSql = `CREATE TABLE IF NOT EXISTS audit_logs (
   dependents_deleted INTEGER
 )`;
 
-// Connect to SQLite database
-const db = new sqlite3.Database("database.db", (err) => {
-  if (err) {
-    console.error(err.message);
-  } else {
-    console.log("Connected to the database.");
+// Middleware setup 
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+// Use the fully resolved path
+app.use("/uploads", express.static(UPLOADS_DIR_PATH));
 
-    db.serialize(() => {
-      // 1. Create Visitors table
-      db.run(visitorsSql, (err) => {
-        if (err) {
-          return console.error("Visitors Table Error (Fatal):", err.message);
-        }
+// Ensure the uploads directory exists
+if (!fs.existsSync(UPLOADS_DIR_PATH)) {
+  fs.mkdirSync(UPLOADS_DIR_PATH, { recursive: true });
+}
 
-        // 2. Create Visits table
-        db.run(visitsSql, (err) => {
-          if (err) {
-            return console.error("Visits Table Error (Fatal):", err.message);
+// --- ASYNCHRONOUS INITIALIZATION AND SETUP FUNCTION ---
+const initializeServer = async () => {
+    
+  // --- 1. DATABASE INTEGRITY CHECK & RECOVERY ---
+  let isDatabaseClean = await checkDatabaseIntegrity(DB_FILE_PATH);
+  const maxRestoreAttempts = 2; 
+  let attempt = 1;
+  
+  while (!isDatabaseClean && attempt <= maxRestoreAttempts) {
+      console.warn(`⚠️ Database check failed (Attempt ${attempt}). Attempting automatic recovery...`);
+      
+      // Pass the server directory (__dirname) as the path where the DB and backups folder reside
+      const restoreSuccess = restoreFromBackup(__dirname); 
+      
+      if (restoreSuccess) {
+          console.log(`Restoration complete. Checking integrity of the new file...`);
+          isDatabaseClean = await checkDatabaseIntegrity(DB_FILE_PATH);
+          
+          if (isDatabaseClean) {
+              console.log("✅ Database successfully recovered and integrity check passed.");
+              break; 
           }
+      } else if (attempt === 1) {
+          console.error("No valid backups found. A new database file will be created on connection.");
+          break; 
+      }
 
-          // 3. Create Dependents table
-          db.run(dependentsSql, (err) => {
-            if (err) {
-              return console.error(
-                "Dependents Table Error (Fatal):",
-                err.message
-              );
-            }
+      attempt++;
+  }
+  
+  if (!isDatabaseClean && attempt > maxRestoreAttempts) {
+      console.error("🚨 CRITICAL ERROR: Database and all backups appear corrupt or unusable. HALTING SERVER STARTUP.");
+      return; // Halt server initialization
+  }
+  
+  //INITIALIZE DB AND MULTER
+  
+  // Connect to SQLite database
+  const db = await new Promise((resolve, reject) => {
+    const dbInstance = new sqlite3.Database(DB_FILE_PATH, (err) => {
+      if (err) {
+        return reject(new Error(`Database connection error (Fatal): ${err.message}`));
+      }
+      console.log("Connected to the database at:", DB_FILE_PATH);
+      resolve(dbInstance);
+    });
+  }).catch(error => {
+    console.error(error.message);
+    return null; // Return null if connection fails
+  });
 
-            // 4. Create Audit Logs table
-            db.run(auditLogsSql, (err) => {
-              if (err) {
-                return console.error(
-                  "Audit Logs Table Error (Fatal):",
-                  err.message
-                );
-              }
-              // Running cleanup job.
-              runDataComplianceCleanup(db);
+  if (!db) return; // Exit if DB connection failed
+
+  // AUTOMATED BACKUP LOGIC 
+  createBackup(DB_FILE_PATH, __dirname); 
+
+  // Set up multer for file uploads
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, UPLOADS_DIR_PATH);
+    },
+    filename: function (req, file, cb) {
+      cb(
+        null,
+        file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+      );
+    },
+  });
+  const upload = multer({
+    storage: storage,
+    limits: {
+      fileSize: 20 * 1024 * 1024,
+    },
+    fileFilter: (req, file, cb) => {
+      if (
+        ["image/jpeg", "image/png", "image/gif"].includes(file.mimetype)
+      ) {
+        cb(null, true);
+      } else {
+        cb(
+          new Error("Invalid file type, only JPEG, PNG, or GIF is allowed!"),
+          false
+        );
+      }
+    },
+  });
+
+  // CREATE TABLES AND ATTACH ROUTE
+  
+  db.serialize(() => {
+    // Run table creation scripts
+    db.run(visitorsSql, (err) => {
+      if (err) return console.error("Visitors Table Error (Fatal):", err.message);
+      db.run(visitsSql, (err) => {
+        if (err) return console.error("Visits Table Error (Fatal):", err.message);
+        db.run(dependentsSql, (err) => {
+          if (err) return console.error("Dependents Table Error (Fatal):", err.message);
+          db.run(auditLogsSql, (err) => {
+            if (err) return console.error("Audit Logs Table Error (Fatal):", err.message);
+            
+            // Running cleanup job.
+            runDataComplianceCleanup(db); 
+
+            // Router usage Attached only after DB is ready
+            app.use("/", createRegistrationRouter(db,upload));
+            app.use("/", createVisitorsRouter(db));
+            app.use("/", createLoginRouter(db));
+            app.use("/", createUpdateVisitorRouter(db));
+            app.use("/", createLogoutRouter(db));
+            app.use("/", createBanVisitorRouter(db));
+            app.use("/", createUnbanVisitorRouter(db));
+            app.use("/", createSearchVisitorsRouter(db)); 
+            app.use("/", createMissedVisitRouter(db)); 
+            app.use("/", createHistoryRouter(db));
+
+            //  START LISTENING ONLY AFTER ALL DB WORK AND ROUTERS ARE ATTACHED
+            app.listen(PORT, () => {
+              console.log(`Server is running on http://localhost:${PORT}`);
             });
           });
         });
       });
     });
-  }
-});
+  });
+};
 
-// Router usage
-app.use("/", createRegistrationRouter(db,upload));
-app.use("/", createVisitorsRouter(db));
-app.use("/", createLoginRouter(db));
-app.use("/", createUpdateVisitorRouter(db));
-app.use("/", createLogoutRouter(db));
-app.use("/", createBanVisitorRouter(db));
-app.use("/", createUnbanVisitorRouter(db));
-app.use("/", createSearchVisitorsRouter(db)); 
-app.use("/", createMissedVisitRouter(db)); 
-app.use("/", createHistoryRouter(db));
-
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Execute the async initialization function
+initializeServer();
