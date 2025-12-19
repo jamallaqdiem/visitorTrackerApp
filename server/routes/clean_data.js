@@ -3,9 +3,9 @@
  * Deletes records older than 2 years from dependents, visits, and finally visitors.
  *
  * @param {import('sqlite3').Database} db The SQLite database instance.
+ * * @param {object} logger - The logging instance injected for testing/production.
  */
-async function runDataComplianceCleanup(db, callback) {
-    const log = (message) => console.log(message);
+async function runDataComplianceCleanup(db,logger) {
     
     // Custom dbRun helper to ensure the 'changes' property is always available, 
     const dbRun = (sql, params = []) => {
@@ -17,7 +17,7 @@ async function runDataComplianceCleanup(db, callback) {
         });
     };
 
-    log('--- Starting Data Retention Compliance Cleanup Job (Async/Await) ---');
+    logger.info('--- Starting Data Retention Compliance Cleanup Job (Async/Await) ---');
 
     let deletedCounts = { dependents: 0, visits: 0, profiles: 0 };
     const twoYearsAgo = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000).toISOString();
@@ -36,13 +36,13 @@ async function runDataComplianceCleanup(db, callback) {
         // The custom dbRun 
         const dependentResult = await dbRun(deleteDependentsSql, [twoYearsAgo]);
         deletedCounts.dependents = dependentResult.changes;
-        log(`Cleanup: Deleted ${deletedCounts.dependents} old dependent record(s).`);
+        logger.info(`Cleanup: Deleted ${deletedCounts.dependents} old dependent record(s).`);
 
         // --- 2. Deleting Visits (older than 2 years) ---
         const deleteVisitsSql = `DELETE FROM visits WHERE entry_time < ?`;
         const visitsResult = await dbRun(deleteVisitsSql, [twoYearsAgo]);
         deletedCounts.visits = visitsResult.changes;
-        log(`Cleanup: Deleted ${deletedCounts.visits} old visit record(s).`);
+        logger.info(`Cleanup: Deleted ${deletedCounts.visits} old visit record(s).`);
 
         // --- 3. Deleting Visitor Profiles (who have no remaining visits) ---
         const deleteVisitorsSql = `
@@ -52,15 +52,15 @@ async function runDataComplianceCleanup(db, callback) {
         `;
         const visitorsResult = await dbRun(deleteVisitorsSql);
         deletedCounts.profiles = visitorsResult.changes;
-        log(`Cleanup: Deleted ${deletedCounts.profiles} inactive visitor profile(s).`);
+        logger.info(`Cleanup: Deleted ${deletedCounts.profiles} inactive visitor profile(s).`);
 
     } catch (error) {
         auditStatus = 'ERROR';
         auditEvent = 'Compliance Cleanup Failed';
         errorMessage = error.message;
-        console.error(`Cleanup Error: ${errorMessage}`);
+        logger.error(`Cleanup Error: ${errorMessage}`);
     } finally {
-        log('--- Data Retention Compliance Cleanup Job Complete ---');
+        logger.info('--- Data Retention Compliance Cleanup Job Complete ---');
 
         // --- 4. Writing Audit Log ---
         const auditLogSql = `
@@ -79,12 +79,9 @@ async function runDataComplianceCleanup(db, callback) {
 
         try {
             await dbRun(auditLogSql, auditParams);
-            log(`Audit Log written successfully: ${auditEvent}.`);
+            logger.info(`Audit Log written successfully: ${auditEvent}.`);
         } catch (auditError) {
-            console.error('FATAL: Could not write audit log:', auditError.message);
-        }
-                if (callback) {
-            callback(errorMessage);
+            logger.error('FATAL: Could not write audit log:', auditError.message);
         }
     }
 }

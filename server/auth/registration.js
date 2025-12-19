@@ -8,7 +8,7 @@ const multer = require("multer");
  * @param {object} db - The SQLite database instance.
  * @returns {express.Router} - An Express router with the registration endpoint.
  */
-function createRegistrationRouter(db, upload) {
+function createRegistrationRouter(db, upload,logger) {
   const router = express.Router();
 
   // Handle visitor registration
@@ -34,7 +34,7 @@ function createRegistrationRouter(db, upload) {
 
     db.get(checkSql, [first_name, last_name], (err, row) => {
       if (err) {
-        console.error("SQL Error during duplicate check:", err.message);
+        logger.error("SQL Error during duplicate check:", err.message);
         return res.status(500).json({ error: err.message });
       }
 
@@ -50,6 +50,7 @@ function createRegistrationRouter(db, upload) {
         db.run(visitorSql, [first_name, last_name, photo_path], function (err) {
           if (err) {
             db.run("ROLLBACK;");
+            logger.error("TRANSACTION FAILED (Visitor Insert):", err.message);
             return res.status(500).json({ error: err.message });
           }
           const visitorId = this.lastID;
@@ -76,6 +77,7 @@ function createRegistrationRouter(db, upload) {
             function (err) {
               if (err) {
                 db.run("ROLLBACK;");
+                logger.error("TRANSACTION FAILED (Visit Insert):", err.message);
                 return res.status(500).json({ error: err.message });
               }
               const visitId = this.lastID;
@@ -116,6 +118,7 @@ function createRegistrationRouter(db, upload) {
                     })
                     .catch((promiseErr) => {
                       db.run("ROLLBACK;");
+                      logger.error("TRANSACTION FAILED (Dependents Insert):", promiseErr.message);
                       res.status(500).json({
                         error: "Failed to save dependents.",
                         detail: promiseErr.message,

@@ -6,8 +6,9 @@ const express = require("express");
  *
  * @param {object} db - The SQLite database instance.
  * @returns {express.Router} - An Express router with the /history endpoint.
+ * * @param {object} logger - The logging instance injected for testing/production.
  */
-function createHistoryRouter(db) {
+function createHistoryRouter(db, logger) {
   const router = express.Router();
   
   //Endpoint to use the password
@@ -18,12 +19,14 @@ function createHistoryRouter(db) {
     : null;
 
     if (password === masterPassword) {
+      logger.info("History authorization successful.");
       return res
 
         .status(200)
 
         .json({ success: true, message: "Authorization successful." });
     } else {
+      logger.warn("History authorization failed: Incorrect password provided (403).");
       return res.status(403).json({ message: "Incorrect password." });
     }
   });
@@ -96,7 +99,7 @@ function createHistoryRouter(db) {
 
     db.all(query, queryParams, (err, rows) => {
       if (err) {
-        console.error("SQL Error in GET /history:", err.message);
+        logger.error("SQL Error in GET /history:", err.message);
         return res
           .status(500)
           .json({ error: "Failed to retrieve historical data." });
@@ -108,7 +111,7 @@ function createHistoryRouter(db) {
           try {
             dependents = JSON.parse(`[${row.additional_dependents_json}]`);
           } catch (e) {
-            console.warn(
+            logger.warn(
               "Could not parse dependents JSON string:",
               row.additional_dependents_json,
               e

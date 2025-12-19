@@ -3,6 +3,13 @@ const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const createMissedVisitRouter = require("./record_missed_visit"); 
 
+// --- Mock Logger Setup (for dependency injection) ---
+const mockLogger = {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+};
+
 // --- Helper Functions ---
 
 /**
@@ -30,6 +37,7 @@ function getFutureEntryTime() {
 const runDB = (dbInstance, sql, params = []) => new Promise((resolve, reject) => {
     dbInstance.run(sql, params, function(err) {
         if (err) return reject(err);
+        // The 'this' context contains lastID/changes when using a standard function declaration
         resolve(this.lastID);
     });
 });
@@ -73,7 +81,8 @@ mockDb.serialize(() => {
 // Create a mock Express app to test the router
 const app = express();
 app.use(express.json()); // Middleware to parse JSON body
-app.use("/", createMissedVisitRouter(mockDb)); // Attach the router
+// Pass the mockDb and the mockLogger to the router factory function
+app.use("/", createMissedVisitRouter(mockDb, mockLogger)); 
 
 // --- Test Setup and Teardown ---
 
@@ -112,8 +121,14 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+    // Clear mock call history for logger
+    mockLogger.info.mockClear();
+    mockLogger.warn.mockClear();
+    mockLogger.error.mockClear();
+
     // Clean up all tables
     await new Promise((resolve, reject) => {
+        // Use DELETE FROM without WHERE clause to quickly empty tables
         mockDb.run(`DELETE FROM dependents`, (err) => {
             if (err) return reject(err);
             mockDb.run(`DELETE FROM visits`, (err) => {
@@ -155,6 +170,7 @@ describe('POST /record-missed-visit', () => {
         // 2. Check response message
         expect(response.body).toHaveProperty('message');
         expect(response.body.message).toMatch("Visitor Entry Time Corrected & Sing it Out");
+        expect(mockLogger.info).toHaveBeenCalled();
 
         // 3. Verify database insertion
         const dbResult = await new Promise((resolve, reject) => {
@@ -182,6 +198,7 @@ describe('POST /record-missed-visit', () => {
 
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message', 'Missing visitor ID or required entry time.');
+        expect(mockLogger.warn).toHaveBeenCalled();
     });
 
     test('should return 400 if entry time is missing', async () => {
@@ -191,6 +208,7 @@ describe('POST /record-missed-visit', () => {
 
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message', 'Missing visitor ID or required entry time.');
+        expect(mockLogger.warn).toHaveBeenCalled();
     });
     
     test('should return 400 if entry time is in the future', async () => {
@@ -206,5 +224,31 @@ describe('POST /record-missed-visit', () => {
         expect(response.status).toBe(400);
         expect(response.body).toHaveProperty('message');
         expect(response.body.message).toContain('Invalid entry time. It must be a valid date/time and occur before the current exit time.');
+        expect(mockLogger.warn).toHaveBeenCalled();
+    });
+
+    //  a test to ensure default values are used if no previous visit exists
+    test('should use default values if no previous visit is found for the visitor', async () => {
+        // Insert a NEW visitor ID with no prior visits in the DB
+        const freshVisitorId = await runDB(mockDb, `INSERT INTO visitors (first_name, last_name) VALUES (?, ?)`, ['Fresh', 'Visitor']);
+        const pastTime = getPastEntryTime();
+        
+        const response = await request(app)
+            .post(API_ENDPOINT)
+            .send({ 
+                visitorId: freshVisitorId, 
+                pastEntryTime: pastTime 
+            });
+
+        expect(response.status).toBe(200);
+
+        // Verify database insertion and check for default values
+        const dbResult = await new Promise((resolve, reject) => {
+            mockDb.get(`SELECT known_as, type FROM visits WHERE visitor_id = ?`, [freshVisitorId], (err, row) => {
+                if (err) return reject(err);
+                resolve(row);
+            });
+        });
+        expect(dbResult.type).toBe('Visitor'); 
     });
 });
