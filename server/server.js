@@ -1,5 +1,5 @@
 // server/server.js
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
@@ -9,13 +9,15 @@ const fs = require("fs");
 const multer = require("multer");
 const app = express();
 const PORT = 3001;
+const logger = require("./logger");
+const { updateStatus, getStatus } = require("./status_tracker");
 
 // IMPORT DB MANAGEMENT FUNCTIONS
-const { 
-  checkDatabaseIntegrity, 
-  restoreFromBackup, 
-  createBackup 
-} = require("./db_management"); 
+const {
+  checkDatabaseIntegrity,
+  restoreFromBackup,
+  createBackup,
+} = require("./db_management");
 
 const runDataComplianceCleanup = require("./routes/clean_data");
 const createRegistrationRouter = require("./auth/registration");
@@ -27,12 +29,13 @@ const createBanVisitorRouter = require("./routes/ban");
 const createUnbanVisitorRouter = require("./routes/unban");
 const createSearchVisitorsRouter = require("./routes/search_visitors");
 const createMissedVisitRouter = require("./routes/record_missed_visit");
-const createHistoryRouter = require("./routes/display_history"); 
+const createHistoryRouter = require("./routes/display_history");
+const createAuditRouter = require("./routes/audit_logs");
 
 const DB_FILE_PATH = path.join(__dirname, "database.db");
 const UPLOADS_DIR_PATH = path.join(__dirname, "uploads");
 
-// Define SQL commands 
+// Define SQL commands
 const visitorsSql = `CREATE TABLE IF NOT EXISTS visitors (
   id INTEGER PRIMARY KEY,
   first_name TEXT NOT NULL,
@@ -75,7 +78,7 @@ const auditLogsSql = `CREATE TABLE IF NOT EXISTS audit_logs (
   dependents_deleted INTEGER
 )`;
 
-// Middleware setup 
+// Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -89,59 +92,75 @@ if (!fs.existsSync(UPLOADS_DIR_PATH)) {
 
 // --- ASYNCHRONOUS INITIALIZATION AND SETUP FUNCTION ---
 const initializeServer = async () => {
-    
   // --- 1. DATABASE INTEGRITY CHECK & RECOVERY ---
-  let isDatabaseClean = await checkDatabaseIntegrity(DB_FILE_PATH);
-  const maxRestoreAttempts = 2; 
+  let isDatabaseClean = await checkDatabaseIntegrity(DB_FILE_PATH, logger);
+  const maxRestoreAttempts = 2;
   let attempt = 1;
-  
-  while (!isDatabaseClean && attempt <= maxRestoreAttempts) {
-      console.warn(`⚠️ Database check failed (Attempt ${attempt}). Attempting automatic recovery...`);
-      
-      // Pass the server directory (__dirname) as the path where the DB and backups folder reside
-      const restoreSuccess = restoreFromBackup(__dirname); 
-      
-      if (restoreSuccess) {
-          console.log(`Restoration complete. Checking integrity of the new file...`);
-          isDatabaseClean = await checkDatabaseIntegrity(DB_FILE_PATH);
-          
-          if (isDatabaseClean) {
-              console.log("✅ Database successfully recovered and integrity check passed.");
-              break; 
-          }
-      } else if (attempt === 1) {
-          console.error("No valid backups found. A new database file will be created on connection.");
-          break; 
-      }
 
-      attempt++;
+  while (!isDatabaseClean && attempt <= maxRestoreAttempts) {
+    logger.warn(
+      `Database check failed (Attempt ${attempt}). Attempting automatic recovery...`
+    );
+
+    // Pass the server directory (__dirname) as the path where the DB and backups folder reside
+    const restoreSuccess = restoreFromBackup(__dirname, logger);
+
+    if (restoreSuccess) {
+      logger.info(
+        `Restoration complete. Checking integrity of the new file...`
+      );
+      isDatabaseClean = await checkDatabaseIntegrity(DB_FILE_PATH, logger);
+
+      if (isDatabaseClean) {
+        logger.info(
+          " Database successfully recovered and integrity check passed."
+        );
+        break;
+      }
+    } else if (attempt === 1) {
+      logger.error(
+        "No valid backups found. A new database file will be created on connection."
+      );
+      break;
+    }
+
+    attempt++;
   }
-  
+
   if (!isDatabaseClean && attempt > maxRestoreAttempts) {
-      console.error("🚨 CRITICAL ERROR: Database and all backups appear corrupt or unusable. HALTING SERVER STARTUP.");
-      return; // Halt server initialization
+    logger.error(
+      "🚨 CRITICAL ERROR: Database and all backups appear corrupt or unusable. HALTING SERVER STARTUP."
+    );
+    return; // Halt server initialization
   }
-  
+
   //INITIALIZE DB AND MULTER
-  
+
   // Connect to SQLite database
   const db = await new Promise((resolve, reject) => {
     const dbInstance = new sqlite3.Database(DB_FILE_PATH, (err) => {
       if (err) {
-        return reject(new Error(`Database connection error (Fatal): ${err.message}`));
+        return reject(
+          new Error(`Database connection error (Fatal): ${err.message}`)
+        );
       }
-      console.log("Connected to the database at:", DB_FILE_PATH);
+      logger.info("Connected to the database at:", DB_FILE_PATH);
+      updateStatus("db_ready", true); // 🔑 UPDATE STATUS ON SUCCESS
+      updateStatus("last_error", null);
       resolve(dbInstance);
     });
-  }).catch(error => {
-    console.error(error.message);
+  }).catch((error) => {
+    logger.error(error.message);
+    updateStatus("db_ready", false); // 🔑 UPDATE STATUS ON FAILURE
+    updateStatus("last_error", error.message);
     return null; // Return null if connection fails
   });
 
   if (!db) return; // Exit if DB connection failed
 
-  // AUTOMATED BACKUP LOGIC 
-  createBackup(DB_FILE_PATH, __dirname); 
+  // AUTOMATED BACKUP LOGIC
+  const backupSuccess = createBackup(DB_FILE_PATH, __dirname, logger);
+  if (backupSuccess) updateStatus("last_backup", new Date().toISOString()); // 🔑 UPDATE STATUS ON SUCCESS
 
   // Set up multer for file uploads
   const storage = multer.diskStorage({
@@ -161,9 +180,7 @@ const initializeServer = async () => {
       fileSize: 20 * 1024 * 1024,
     },
     fileFilter: (req, file, cb) => {
-      if (
-        ["image/jpeg", "image/png", "image/gif"].includes(file.mimetype)
-      ) {
+      if (["image/jpeg", "image/png", "image/gif"].includes(file.mimetype)) {
         cb(null, true);
       } else {
         cb(
@@ -175,36 +192,49 @@ const initializeServer = async () => {
   });
 
   // CREATE TABLES AND ATTACH ROUTE
-  
+
   db.serialize(() => {
     // Run table creation scripts
     db.run(visitorsSql, (err) => {
-      if (err) return console.error("Visitors Table Error (Fatal):", err.message);
+      if (err)
+        return logger.error("Visitors Table Error (Fatal):", err.message);
       db.run(visitsSql, (err) => {
-        if (err) return console.error("Visits Table Error (Fatal):", err.message);
+        if (err)
+          return logger.error("Visits Table Error (Fatal):", err.message);
         db.run(dependentsSql, (err) => {
-          if (err) return console.error("Dependents Table Error (Fatal):", err.message);
+          if (err)
+            return logger.error("Dependents Table Error (Fatal):", err.message);
           db.run(auditLogsSql, (err) => {
-            if (err) return console.error("Audit Logs Table Error (Fatal):", err.message);
-            
+            if (err)
+              return logger.error(
+                "Audit Logs Table Error (Fatal):",
+                err.message
+              );
+
             // Running cleanup job.
-            runDataComplianceCleanup(db); 
+            runDataComplianceCleanup(db, logger);
+            updateStatus("last_cleanup", new Date().toISOString()); // 🔑 UPDATE STATUS ON SUCCESS
 
             // Router usage Attached only after DB is ready
-            app.use("/", createRegistrationRouter(db,upload));
-            app.use("/", createVisitorsRouter(db));
-            app.use("/", createLoginRouter(db));
-            app.use("/", createUpdateVisitorRouter(db));
-            app.use("/", createLogoutRouter(db));
-            app.use("/", createBanVisitorRouter(db));
-            app.use("/", createUnbanVisitorRouter(db));
-            app.use("/", createSearchVisitorsRouter(db)); 
-            app.use("/", createMissedVisitRouter(db)); 
-            app.use("/", createHistoryRouter(db));
+            app.get("/api/status", (req, res) => {
+              res.json(getStatus());
+            });
+            
+            app.use("/api/audit/", createAuditRouter(db, logger));
+            app.use("/", createRegistrationRouter(db, upload, logger));
+            app.use("/", createVisitorsRouter(db, logger));
+            app.use("/", createLoginRouter(db, logger));
+            app.use("/", createUpdateVisitorRouter(db, logger));
+            app.use("/", createLogoutRouter(db, logger));
+            app.use("/", createBanVisitorRouter(db, logger));
+            app.use("/", createUnbanVisitorRouter(db, logger));
+            app.use("/", createSearchVisitorsRouter(db, logger));
+            app.use("/", createMissedVisitRouter(db, logger));
+            app.use("/", createHistoryRouter(db, logger));
 
             //  START LISTENING ONLY AFTER ALL DB WORK AND ROUTERS ARE ATTACHED
             app.listen(PORT, () => {
-              console.log(`Server is running on http://localhost:${PORT}`);
+              logger.info(`Server is running on http://localhost:${PORT}`);
             });
           });
         });
@@ -213,5 +243,8 @@ const initializeServer = async () => {
   });
 };
 
-// Execute the async initialization function
-initializeServer();
+if (require.main === module) {
+  // Execute the async initialization function only when run directly (i.e., not imported by a test file)
+  initializeServer();
+}
+module.exports = { initializeServer, app };

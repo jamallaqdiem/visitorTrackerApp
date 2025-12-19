@@ -5,8 +5,10 @@ import VisitorRegistrationForm from "./components/VisitorRegistrationForm";
 import PasswordModal from "./components/PasswordModal";
 import RecordMissedVisitModal from "./components/RecordMissedVisitModal";
 import HistoryDashboard from "./components/VisitHistory";
+import { logClientError } from "./components/utils/error_logging";
+import SystemStatusWidget from './components/SystemStatusWidget';
 
-const API_BASE_URL = "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 // Initial state for the registration form
 const initialRegistrationForm = {
@@ -135,6 +137,14 @@ function App() {
       const data = await response.json();
       setVisitors(data);
     } catch (err) {
+      logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          endpoint: '/visitors'
+        }, 
+        'API_VISITORS_FAIL'
+      );
       console.error("Error fetching visitors:", err);
       setError("Failed to load active visitors.");
       setVisitors([]);
@@ -189,6 +199,15 @@ function App() {
         setShowRegistration(false);
       }
     } catch (err) {
+      logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          searchTerm: trimmedTerm,
+          endpoint: '/visitor-search'
+        }, 
+        'API_VISITORS_FAIL'
+      );
       console.error("Search Error:", err.message);
       showNotification(`Search Failed: ${err.message}`, "error");
     } finally {
@@ -346,6 +365,15 @@ function App() {
 
       fetchVisitors(); // Refresh the list
     } catch (err) {
+      logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          visitorName: `${regFormData.firstName} ${regFormData.lastName}`,
+          endpoint: '/register-visitor'
+        }, 
+        'API_REGISTRATION_FAIL'
+      );
       console.error("Registration Error:", err.message);
       showNotification(`Registration Failed: ${err.message}`, "error");
     } finally {
@@ -397,6 +425,16 @@ function App() {
         fetchVisitors();
       }, 3000);
     } catch (err) {
+      logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          visitorName: `${selectedVisitor.first_name} ${selectedVisitor.last_name}`,
+          visitorId: id,
+          endpoint: '/login'
+        }, 
+        'API_LOGIN_FAIL'
+      );
       console.error("Login Error:", err.message);
       showNotification(`Login Failed: ${err.message}`, "error");
     }
@@ -460,6 +498,16 @@ function App() {
         fetchVisitors();
       }, 2000);
     } catch (err) {
+      logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          visitorName: `${selectedVisitor.first_name} ${selectedVisitor.last_name}`,
+          visitorId: selectedVisitor.id,
+          endpoint: '/update-visitor-details'
+        }, 
+        'API_UPDATE_VISITOR_DETAILS_FAIL'
+      );
       console.error("Update & Login Error:", err.message);
       showNotification(`Update & sign Failed: ${err.message}`, "error");
     }
@@ -492,6 +540,16 @@ function App() {
         fetchVisitors();
       }, 3000);
     } catch (err) {
+      logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          visitorName: `${selectedVisitor.first_name} ${selectedVisitor.last_name}`,
+          visitorId: id,
+          endpoint: '/ban-visitor'
+        }, 
+        'API_BAN_VISITOR_FAIL'
+      );
       console.error("Ban Error:", err.message);
       showNotification(`Ban Failed: ${err.message}`, "error");
     }
@@ -559,6 +617,16 @@ function App() {
         setSelectedVisitor((prev) => (prev ? { ...prev, is_banned: 0 } : null));
         fetchVisitors();
       } catch (err) {
+        logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          visitorName: `${selectedVisitor.first_name} ${selectedVisitor.last_name}`,
+          visitorId: currentId,
+          endpoint: '/unban-visitor'
+        }, 
+        'API_UNBAN_FAIL'
+      );
         console.error("Unban Error:", err.message);
         showNotification(`Unban Failed: ${err.message}`, "error");
         setPassword("");
@@ -588,6 +656,15 @@ function App() {
         showNotification("History access granted. Loading data...", "blue");
         fetchHistoryRecords("", "", "");
       } catch (err) {
+        logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          action: 'AUTHORIZE_HISTORY_VIEW',
+          endpoint: '/authorize-history'
+        }, 
+        'API_AUTHORIZE_HISTORY_FAIL'
+      );
         console.error("History Access Error:", err.message);
         showNotification(`Access Denied: ${err.message}`, "error");
         setPassword("");
@@ -656,6 +733,16 @@ function App() {
         handleCancelAction(); // Go back to the dashboard after success
       }, 3000);
     } catch (err) {
+      logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          visitorName: `${selectedVisitor.first_name} ${selectedVisitor.last_name}`,
+          visitorId:visitorId,
+          endpoint: '/record-missed-visit'
+        }, 
+        'API_RECORD_MISSED_VISIT_FAIL'
+      );
       console.error("Missed Visit Error:", err.message);
       showNotification(`${err.message}`, "error");
     }
@@ -679,6 +766,16 @@ function App() {
       showNotification(result.message, "success");
       fetchVisitors();
     } catch (err) {
+      logClientError(
+        err, 
+        { 
+          // Include relevant context data for debugging
+          visitorName: `${selectedVisitor.first_name} ${selectedVisitor.last_name}`,
+          visitorId: id,
+          endpoint: '/exit-visitor'
+        }, 
+        'API_EXIT_VISITOR_FAIL'
+      );
       console.error("Logout Error:", err.message);
       showNotification(`Logout Failed: ${err.message}`, "error");
     }
@@ -754,6 +851,17 @@ function App() {
         "success"
       );
     } catch (e) {
+      logClientError(
+        e, 
+        { 
+          // Include relevant context data for debugging
+          query: query,
+          startDateFilter: start,
+          endDateFilter: end,
+          endpoint: '/history'
+        }, 
+        'API_HISTORY_FAIL'
+      );
       console.error("Error fetching history records:", e.message);
       showNotification(`Failed to fetch history: ${e.message}`, "error");
     } finally {
@@ -859,14 +967,15 @@ function App() {
       <script src="https://cdn.tailwindcss.com"></script>
 
       {/* Header */}
-      <div className="flex flex-col items-center w-full mb-8 relative">
-        <img
-      src="Salvation-Army-logo.png"
-      alt="The Salvation Army Red Shield Logo"
-      className="absolute left-0 top-0 w-28 h-28 object-contain print-show-logo"
-      // Fallback in case the image path is broken
-      onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/96x96/DA251C/ffffff?text=TSA'; }}
-    />
+       <div className="flex flex-col items-center w-full mb-8 relative">
+          <img
+            src="Salvation-Army-logo.png"
+            alt="The Salvation Army Red Shield Logo"
+            className="absolute left-0 top-0 w-28 h-28 object-contain print-show-logo"
+            // Fallback in case the image path is broken
+            onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/96x96/DA251C/ffffff?text=TSA'; }}
+          />
+        <div className="flex flex-col  pt-3">
         <h1 className="text-4xl font-extrabold text-blue-800 mb-2">
           The Salvation Army Social Services
         </h1>
@@ -890,7 +999,6 @@ function App() {
         >
           {showHistory ? "Show Dashboard" : "View Historical Data"}
         </button>
-
         {/* Button Group for View Switching */}
         {!showHistory && !showRegistration && (
           <div className="flex min-w-[200px] justify-center mt-4">
@@ -913,6 +1021,7 @@ function App() {
             </button>
           </div>
         )}
+        </div>
       </div>
 
       <div className="w-full max-w-6xl mx-auto">
@@ -1024,6 +1133,8 @@ function App() {
         setEntryTime={setMissedEntryTime}
         confirmAction={confirmRecordMissedVisit}
       />
+      <SystemStatusWidget />
+    
     </div>
   );
 }

@@ -9,35 +9,45 @@ const express = require("express");
  *
  * @param {object} db - The SQLite database instance.
  * @returns {express.Router} - An Express router with the correction endpoint.
+ *  @param {object} logger - The logging instance injected for testing/production.
  */
-function createMissedVisitRouter(db) {
-    const router = express.Router();
+function createMissedVisitRouter(db, logger) {
+  const router = express.Router();
 
-    // Endpoint: POST /record-missed-visit
-    // Body expected: { visitorId: 1, pastEntryTime: "YYYY-MM-DDTHH:MM:SSZ" }
-    router.post("/record-missed-visit", (req, res) => {
-        // 1. Extract data from the request body
-        const { visitorId, pastEntryTime } = req.body;
-        if (!visitorId || !pastEntryTime) {
-            return res.status(400).json({ message: "Missing visitor ID or required entry time." });
-        }
+  // Endpoint: POST /record-missed-visit
+  // Body expected: { visitorId: 1, pastEntryTime: "YYYY-MM-DDTHH:MM:SSZ" }
+  router.post("/record-missed-visit", (req, res) => {
+    // 1. Extract data from the request body
+    const { visitorId, pastEntryTime } = req.body;
+    if (!visitorId || !pastEntryTime) {
+      logger.warn(
+        "Missed visit attempt failed: Missing visitorId or pastEntryTime (400)."
+      );
+      return res
+        .status(400)
+        .json({ message: "Missing visitor ID or required entry time." });
+    }
 
-        // 3. Set the Exit Time to the current server time and validate entry time
-        const currentExitTime = new Date().toISOString();
-        const entryDate = new Date(pastEntryTime);
-        const exitDate = new Date(currentExitTime);
+    // 3. Set the Exit Time to the current server time and validate entry time
+    const currentExitTime = new Date().toISOString();
+    const entryDate = new Date(pastEntryTime);
+    const exitDate = new Date(currentExitTime);
 
-        // Check if the date is valid and if the entry time occurs before the current exit time
-        if (isNaN(entryDate.getTime()) || entryDate >= exitDate) {
-            return res.status(400).json({ 
-                message: "Invalid entry time. It must be a valid date/time and occur before the current exit time." 
-            });
-        }
-        
-        const entry_time_iso = entryDate.toISOString();
+    // Check if the date is valid and if the entry time occurs before the current exit time
+    if (isNaN(entryDate.getTime()) || entryDate >= exitDate) {
+      logger.warn(
+        `Missed visit attempt failed for ID ${visitorId}: Invalid or future entry time provided (400).`
+      );
+      return res.status(400).json({
+        message:
+          "Invalid entry time. It must be a valid date/time and occur before the current exit time.",
+      });
+    }
 
-        // 4. Step 1: Find the details of the visitor's most recent visit.
-        const selectSql = `
+    const entry_time_iso = entryDate.toISOString();
+
+    // 4. Step 1: Find the details of the visitor's most recent visit.
+    const selectSql = `
             SELECT 
                 known_as, address, phone_number, unit, reason_for_visit, type, company_name, mandatory_acknowledgment_taken
             FROM visits 
@@ -46,64 +56,82 @@ function createMissedVisitRouter(db) {
             LIMIT 1
         `;
 
-        db.get(selectSql, [visitorId], (err, lastVisit) => {
-            if (err) {
-                console.error("SQL Error during SELECT in /record-missed-visit:", err.message);
-                return res.status(500).json({ error: "Database error during lookup: " + err.message });
-            }
+    db.get(selectSql, [visitorId], (err, lastVisit) => {
+      if (err) {
+        logger.error(
+          "SQL Error during SELECT in /record-missed-visit:",
+          err.message
+        );
+        return res
+          .status(500)
+          .json({ error: "Database error during lookup: " + err.message });
+      }
 
-            // Use details from the last visit, or fall back to defaults if no previous record exists
-            const visitDetails = lastVisit || {};
-            const knownAs = visitDetails.known_as || '--';
-            const address1 = visitDetails.address || '--';
-            const phoneNumber = visitDetails.phone_number || null;
-            const unit = visitDetails.unit || "--"; 
-            const reasonForVisit = visitDetails.reason_for_visit || null;
-            const type = visitDetails.type || "Visitor"; 
-            const companyName = visitDetails.company_name || null;
-            const mandatoryTaken = visitDetails.mandatory_acknowledgment_taken || '--'
+      // Use details from the last visit, or fall back to defaults if no previous record exists
+      const visitDetails = lastVisit || {};
+      const knownAs = visitDetails.known_as || "--";
+      const address1 = visitDetails.address || "--";
+      const phoneNumber = visitDetails.phone_number || null;
+      const unit = visitDetails.unit || "--";
+      const reasonForVisit = visitDetails.reason_for_visit || null;
+      const type = visitDetails.type || "Visitor";
+      const companyName = visitDetails.company_name || null;
+      const mandatoryTaken =
+        visitDetails.mandatory_acknowledgment_taken || "--";
 
-            // 5. Step 2: Insert the new historical record
-            const insertSql = `
+      // 5. Step 2: Insert the new historical record
+      const insertSql = `
                 INSERT INTO visits (
                     visitor_id, entry_time, exit_time, known_as, address, phone_number, unit, reason_for_visit, type, company_name, mandatory_acknowledgment_taken
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
-            db.run(insertSql, 
-                [
-                    visitorId, 
-                    entry_time_iso, 
-                    currentExitTime,
-                    knownAs,
-                    address1, 
-                    phoneNumber, 
-                    unit, 
-                    reasonForVisit, 
-                    type, 
-                    companyName,
-                    mandatoryTaken
-                ], 
-                function (err) {
-                    if (err) {
-                        // Log and return 500 status on database failure (e.g., foreign key violation)
-                        console.error("SQL Error during INSERT in /record-missed-visit:", err.message);
-                        return res.status(500).json({ error: "Failed to record historical visit due to database error: " + err.message });
-                    }
-
-                    // Success response
-                    res.status(200).json({
-                        message: "Visitor Entry Time Corrected & Sing it Out",
-                        entry: entry_time_iso,
-                        exit: currentExitTime
-                    });
-                }
+      db.run(
+        insertSql,
+        [
+          visitorId,
+          entry_time_iso,
+          currentExitTime,
+          knownAs,
+          address1,
+          phoneNumber,
+          unit,
+          reasonForVisit,
+          type,
+          companyName,
+          mandatoryTaken,
+        ],
+        function (err) {
+          if (err) {
+            // Log and return 500 status on database failure (e.g., foreign key violation)
+            logger.error(
+              "SQL Error during INSERT in /record-missed-visit:",
+              err.message
             );
-        });
+            return res
+              .status(500)
+              .json({
+                error:
+                  "Failed to record historical visit due to database error: " +
+                  err.message,
+              });
+          }
+          logger.info(
+            `Missed visit recorded and signed out for ID ${visitorId} (Entry: ${entry_time_iso}, Exit: ${currentExitTime}).`
+          );
+          // Success response
+          res.status(200).json({
+            message: "Visitor Entry Time Corrected & Sing it Out",
+            entry: entry_time_iso,
+            exit: currentExitTime,
+          });
+        }
+      );
     });
+  });
 
-    return router;
+  return router;
 }
 
 module.exports = createMissedVisitRouter;

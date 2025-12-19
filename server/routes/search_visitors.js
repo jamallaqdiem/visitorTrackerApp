@@ -5,16 +5,19 @@ const express = require("express");
  *
  * @param {object} db - The SQLite database instance.
  * @returns {express.Router} - An Express router with the search endpoint.
+ * @param {object} logger - The logging instance injected for testing/production.
  */
-function createSearchVisitorsRouter(db) {
+function createSearchVisitorsRouter(db ,logger) {
   const router = express.Router();
 
   // Endpoint to search for visitors by name
   router.get("/visitor-search", (req, res) => {
     const searchTerm = req.query.name;
     if (!searchTerm) {
+      logger.warn("Search attempted without a 'name' search term (400 Bad Request).");
       return res.status(400).json({ message: "Search term 'name' is required." });
     }
+    logger.info(`Starting visitor search for term: "${searchTerm}"`);
 
     const searchTerms = searchTerm.split(' ');
     let query = `
@@ -53,7 +56,7 @@ function createSearchVisitorsRouter(db) {
 
     db.all(query, likeTerms.flatMap(term => [term, term]), (err, rows) => {
       if (err) {
-        console.error("SQL Error in visitor-search:", err.message);
+        logger.error("SQL Error in visitor-search:", err.message);
         return res.status(500).json({ error: err.message });
       }
       
@@ -63,7 +66,7 @@ function createSearchVisitorsRouter(db) {
           try {
             dependentsData = JSON.parse(`[${row.dependents_json}]`);
           } catch (parseErr) {
-            console.error("Failed to parse dependents JSON:", parseErr.message);
+            logger.error("Failed to parse dependents JSON:", parseErr.message);
           }
         }
         
@@ -75,6 +78,7 @@ function createSearchVisitorsRouter(db) {
           dependents: dependentsData,
         };
       });
+      logger.info(`Search for "${searchTerm}" completed successfully, found ${rows.length} results.`);
       res.status(200).json(resultsWithUrls);
     });
   });

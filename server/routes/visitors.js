@@ -5,8 +5,9 @@ const express = require("express");
  *
  * @param {object} db - The SQLite database instance.
  * @returns {express.Router} - An Express router with the visitor endpoints.
+ * @param {object} logger - The logging instance injected for testing/production.
  */
-function createVisitorsRouter(db) {
+function createVisitorsRouter(db,logger) {
   const router = express.Router();
 
   // Endpoint to get all currently signed-in visitors
@@ -55,9 +56,11 @@ function createVisitorsRouter(db) {
 `;
     db.all(query, [], (err, rows) => {
       if (err) {
+        logger.error("SQL Error fetching signed-in visitors:", err.message);
         res.status(500).json({ error: err.message });
         return;
       }
+      logger.debug(`Fetched ${rows.length} currently signed-in visitors.`);
       const resultsWithUrls = rows.map((row) => ({
         ...row,
         photo: row.photo_path

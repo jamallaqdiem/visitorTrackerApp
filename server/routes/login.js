@@ -5,14 +5,25 @@ const express = require("express");
  *
  * @param {object} db - The SQLite database instance.
  * @returns {express.Router} - An Express router with the login endpoint.
+ *  @param {object} logger - The logging instance injected for testing/production.
  */
-function createLoginRouter(db) {
+function createLoginRouter(db, logger) {
   const router = express.Router();
 
   // Endpoint for an existing visitor to log in
   router.post("/login", (req, res) => {
     const { id } = req.body;
     const entry_time = new Date().toISOString();
+
+    if (!id) {
+      // 🔑 LOGGING: Missing ID (400 Bad Request)
+      logger.warn(
+        "Login attempt failed: Missing visitor ID in request body (400)."
+      );
+      return res
+        .status(400)
+        .json({ message: "Visitor ID is required for login." });
+    }
 
     // Step 1: Find the last visit's details, including dependents.
     const findSql = `
@@ -42,14 +53,18 @@ function createLoginRouter(db) {
 
     db.get(findSql, [id], (err, row) => {
       if (err) {
-        console.error("SQL Error in login:", err.message);
+        logger.error("SQL Error in login:", err.message);
         return res.status(500).json({ error: err.message });
       }
 
       if (!row) {
+        logger.warn(`Login failed for ID ${id}: Visitor not found (404).`);
         return res.status(404).json({ message: "Visitor not found." });
       }
       if (row.is_banned === 1) {
+        logger.warn(
+          `Login attempt by banned visitor ID ${id} blocked (403 Forbidden).`
+        );
         return res
           .status(403)
           .json({ message: "This visitor is banned and cannot log in." });
@@ -63,7 +78,7 @@ function createLoginRouter(db) {
             (dep) => dep.full_name && dep.full_name.trim() !== ""
           );
         } catch (parseErr) {
-          console.error(
+          logger.error(
             "Failed to parse dependents JSON for insertion:",
             parseErr.message
           );
@@ -89,7 +104,7 @@ function createLoginRouter(db) {
 
       db.run(insertSql, params, function (err) {
         if (err) {
-          console.error("SQL Error inserting new visit:", err.message);
+          logger.error("SQL Error inserting new visit:", err.message);
           return res.status(500).json({ error: err.message });
         }
         const newVisitId = this.lastID; // Get the ID of the newly created visit
@@ -106,8 +121,8 @@ function createLoginRouter(db) {
               [newVisitId, dep.full_name, dep.age],
               (depErr) => {
                 if (depErr) {
-                  console.error(
-                    "SQL Error inserting dependent:",
+                  logger.error(
+                    `SQL Error inserting dependent for Visit ID ${newVisitId}`,
                     depErr.message
                   );
                 }
@@ -122,7 +137,9 @@ function createLoginRouter(db) {
           is_banned: row.is_banned,
           dependents: dependentsData,
         };
-
+        logger.info(
+          `SUCCESS: Visitor ID ${id} signed in successfully. New Visit ID: ${newVisitId}.`
+        );
         res.status(200).json({
           message: "Visitor signed in successfully!",
           visitorData: visitorData,

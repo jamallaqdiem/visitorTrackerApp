@@ -1,44 +1,130 @@
+const sqlite3 = require('sqlite3').verbose();
 const fs = require("fs");
 const path = require("path");
-const sqlite3 = require("sqlite3").verbose();
 
-//Automated cleanup of old backup files (Internal Utility)
-function cleanOldBackups(backupDir, filePrefix, daysToRetain) {
-  // Calculate the cutoff time in milliseconds
-  const cutoffTime = Date.now() - daysToRetain * 24 * 60 * 60 * 1000;
-
-  try {
-    const backupFiles = fs
-      .readdirSync(backupDir)
-      // Filter for files matching your naming convention (e.g., database-YYYY-MM-DD.db)
-      .filter((file) => file.startsWith(filePrefix) && file.endsWith(".db"));
-
-    let deletedCount = 0;
-
-    backupFiles.forEach((file) => {
-      const filePath = path.join(backupDir, file);
-      const stats = fs.statSync(filePath);
-
-      // Check if modification time is older than the cutoff
-      if (stats.mtimeMs < cutoffTime) {
-        fs.unlinkSync(filePath); // Delete the file
-        deletedCount++;
-      }
+/**
+ * Helper function to query table schema information using PRAGMA table_info.
+ */
+function getTableSchema(db, tableName) {
+    return new Promise((resolve, reject) => {
+        db.all(`PRAGMA table_info(${tableName})`, (err, rows) => {
+            if (err) return reject(err);
+            resolve(rows);
+        });
     });
+}
 
-    if (deletedCount > 0) {
-      console.log(
-        `Cleaned up ${deletedCount} old backup file(s) (older than ${daysToRetain} days).`
-      );
-    } else {
-      console.log(
-        `No backups found older than ${daysToRetain} days to clean up.`
-      );
+/**
+ * Initializes the SQLite database and ensures all necessary tables are created.
+ */
+function initializeDatabase(dbPath = ':memory:') {
+    return new Promise((resolve, reject) => {
+        // We create the DB instance first
+        const db = new sqlite3.Database(dbPath, (err) => {
+            if (err) {
+                console.error('Error opening database:', err.message);
+                return reject(err);
+            }
+        });
+
+        // Use db.serialize to ensure sequential execution
+        db.serialize(() => {
+            // Enable foreign keys
+            db.run('PRAGMA foreign_keys = ON;', (pragmaErr) => {
+                if (pragmaErr) {
+                    console.error('Error enabling foreign keys:', pragmaErr.message);
+                    return reject(pragmaErr);
+                }
+            });
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS visitors (
+                    id INTEGER PRIMARY KEY,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT,
+                    is_banned INTEGER DEFAULT 0
+                )
+            `, (err) => {
+                if (err) return reject(new Error('Failed to create visitors table: ' + err.message));
+            });
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS visits (
+                    id INTEGER PRIMARY KEY,
+                    visitor_id INTEGER NOT NULL,
+                    entry_time TEXT NOT NULL,
+                    exit_time TEXT,
+                    known_as TEXT,
+                    address TEXT,
+                    phone_number TEXT,
+                    unit TEXT,
+                    reason_for_visit TEXT,
+                    type TEXT,
+                    company_name TEXT,
+                    mandatory_acknowledgment_taken TEXT,
+                    FOREIGN KEY (visitor_id) REFERENCES visitors(id)
+                )
+            `, (err) => {
+                if (err) return reject(new Error('Failed to create visits table: ' + err.message));
+            });
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS dependents (
+                    id INTEGER PRIMARY KEY,
+                    visit_id INTEGER NOT NULL,
+                    full_name TEXT NOT NULL,
+                    age INTEGER,
+                    FOREIGN KEY (visit_id) REFERENCES visits(id)
+                )
+            `, (err) => {
+                if (err) return reject(new Error('Failed to create dependents table: ' + err.message));
+            });
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id INTEGER PRIMARY KEY,
+                    event_name TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    profiles_deleted INTEGER,
+                    visits_deleted INTEGER,
+                    dependents_deleted INTEGER
+                )
+            `, (err) => {
+                if (err) return reject(new Error('Failed to create audit_logs table: ' + err.message));
+                // Resolve the promise with the DB instance only after everything is done
+                resolve(db);
+            });
+        });
+    });
+}
+
+// Internal Utility
+function cleanOldBackups(backupDir, filePrefix, daysToRetain, logger) {
+    const cutoffTime = Date.now() - daysToRetain * 24 * 60 * 60 * 1000;
+    try {
+        if (!fs.existsSync(backupDir)) return;
+
+        const backupFiles = fs.readdirSync(backupDir)
+            .filter((file) => file.startsWith(filePrefix) && file.endsWith(".db"));
+
+        let deletedCount = 0;
+
+        backupFiles.forEach((file) => {
+            const filePath = path.join(backupDir, file);
+            const stats = fs.statSync(filePath);
+            if (stats.mtimeMs < cutoffTime) {
+                fs.unlinkSync(filePath);
+                deletedCount++;
+            }
+        });
+
+        if (deletedCount > 0) {
+            logger.info(`Cleaned up ${deletedCount} old backup file(s).`);
+        }
+    } catch (error) {
+        logger.error("Error during backup cleanup:", error.message);
     }
-  } catch (error) {
-    // Log errors, but don't halt the application if cleanup fails
-    console.error("Error during backup cleanup:", error.message);
-  }
 }
 
 /**
@@ -46,12 +132,11 @@ function cleanOldBackups(backupDir, filePrefix, daysToRetain) {
  * @param {string} dbFilePath - Full path to the database file.
  * @returns {Promise<boolean>} Resolves to true if the database is OK, false otherwise.
  */
-function checkDatabaseIntegrity(dbFilePath) {
+function checkDatabaseIntegrity(dbFilePath, logger) {
   return new Promise((resolve) => {
     // 1. Check if the file exists at all
     if (!fs.existsSync(dbFilePath)) {
-      console.log("Database file is missing (Integrity Check).");
-      // A missing file is treated as "not clean" (false) to trigger recovery/creation.
+      logger.info("Database file is missing (Integrity Check).");
       return resolve(false);
     }
 
@@ -61,138 +146,113 @@ function checkDatabaseIntegrity(dbFilePath) {
       sqlite3.OPEN_READONLY,
       (err) => {
         if (err) {
-          console.error(
+          logger.error(
             "Could not open database file for integrity check:",
             err.message
           );
           return resolve(false);
         }
-
-        // 3. Run the PRAGMA check
-        db.all("PRAGMA integrity_check", (pragmaErr, rows) => {
-          db.close();
-
-          if (pragmaErr) {
-            console.error(
-              "Error executing integrity check PRAGMA:",
-              pragmaErr.message
-            );
-            return resolve(false);
-          }
-
-          // If the result is a single row with the value "ok", the database is clean.
-          const isCorrupt = rows.length > 0 && rows[0].integrity_check !== "ok";
-
-          if (isCorrupt) {
-            console.error(
-              "Database corruption detected by PRAGMA integrity_check."
-            );
-          } else {
-            console.log("Database integrity check passed. File is OK.");
-          }
-
-          resolve(!isCorrupt);
-        });
       }
     );
+
+    
+    // 3. Run the PRAGMA check using the 'db' instance directly
+    db.all("PRAGMA integrity_check", (pragmaErr, rows) => {
+        // Only run close and logic if the DB instance was successfully created
+        if (db) db.close(); 
+
+        if (pragmaErr) {
+            logger.error("Error executing integrity check PRAGMA:", pragmaErr.message);
+            return resolve(false);
+        }
+
+        const isCorrupt = rows.length > 0 && rows[0].integrity_check !== "ok";
+
+        if (isCorrupt) {
+            logger.error("Database corruption detected by PRAGMA integrity_check.");
+        } else {
+            logger.info("Database integrity check passed. File is OK.");
+        }
+
+        resolve(!isCorrupt);
+    });
   });
 }
 
 /**
- * Restores the latest good backup to the main database file path.
- * @param {string} dataPath - The base directory where 'database.db' and 'backups' are stored (e.g., __dirname).
- * @param {string} dbFileName - The name of the database file (e.g., 'database.db').
- * @returns {boolean} True if a restore was successful, false otherwise.
+ * Restores the latest good backup.
  */
-function restoreFromBackup(dataPath, dbFileName = "database.db") {
-  // Backups are assumed to be in the 'backups' subdirectory of the dataPath
-  const backupDir = path.join(dataPath, "backups");
-  const dbFilePath = path.join(dataPath, dbFileName);
+function restoreFromBackup(dataPath, logger, dbFileName = "database.db") {
+    const backupDir = path.join(dataPath, "backups");
+    const dbFilePath = path.join(dataPath, dbFileName);
 
-  console.log("Attempting database recovery...");
+    logger.info("Attempting database recovery...");
 
-  if (!fs.existsSync(backupDir)) {
-    console.log("No backup directory found. Cannot restore.");
-    return false;
-  }
+    if (!fs.existsSync(backupDir)) {
+        logger.info("No backup directory found. Cannot restore.");
+        return false;
+    }
 
-  // Find all backup files and get the latest one
-  const backupFiles = fs
-    .readdirSync(backupDir)
-    .filter(
-      (file) =>
-        file.startsWith(dbFileName.split(".")[0]) && file.endsWith(".db")
-    )
-    .sort() // Sort alphabetically (YYYY-MM-DD makes the latest date last)
-    .reverse(); // Reverse to get the latest file first
+    const backupFiles = fs.readdirSync(backupDir)
+        .filter((file) => file.startsWith(dbFileName.split(".")[0]) && file.endsWith(".db"))
+        .sort().reverse();
 
-  if (backupFiles.length === 0) {
-    console.log("No backup files found. Cannot restore.");
-    return false;
-  }
+    if (backupFiles.length === 0) {
+        logger.info("No backup files found. Cannot restore.");
+        return false;
+    }
 
-  const latestBackupFile = backupFiles[0];
-  const latestBackupPath = path.join(backupDir, latestBackupFile);
+    const latestBackupFile = backupFiles[0];
+    const latestBackupPath = path.join(backupDir, latestBackupFile);
 
-  try {
-    // Copy the latest backup to the main database file path
-    fs.copyFileSync(latestBackupPath, dbFilePath);
-    console.log(
-      ` Successfully restored database from latest backup: ${latestBackupFile}`
-    );
-    return true;
-  } catch (error) {
-    console.error(` Error during database restoration:`, error.message);
-    return false;
-  }
+    try {
+        fs.copyFileSync(latestBackupPath, dbFilePath);
+        logger.info(`Successfully restored database from: ${latestBackupFile}`);
+        return true;
+    } catch (error) {
+        logger.error(`Error during database restoration:`, error.message);
+        return false;
+    }
 }
 
 /**
- * Creates a clean, time-stamped backup and deletes old backups.
- * @param {string} dbFilePath - Full path to the database file (source).
- * @param {string} dataPath - The base directory where 'backups' should be stored (e.g., __dirname).
- * @returns {boolean} True if a backup was successful, false otherwise.
+ * Creates a backup.
  */
-function createBackup(dbFilePath, dataPath) {
-  const backupDir = path.join(dataPath, "backups");
-  const daysToRetain = 7; // Define the retention policy:  7 days of backups
+function createBackup(dbFilePath, dataPath, logger) {
+    const backupDir = path.join(dataPath, "backups");
+    const daysToRetain = 7;
 
-  // Ensure the backups directory exists
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
-  }
+    if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+    }
 
-  const dateStamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const dbFileName = path.basename(dbFilePath);
-  const backupFileNamePrefix = dbFileName.split(".")[0];
-  const backupFileName = `${backupFileNamePrefix}-${dateStamp}.db`;
-  const backupFilePath = path.join(backupDir, backupFileName);
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const dbFileName = path.basename(dbFilePath);
+    const backupFileNamePrefix = dbFileName.split(".")[0];
+    const backupFileName = `${backupFileNamePrefix}-${dateStamp}.db`;
+    const backupFilePath = path.join(backupDir, backupFileName);
 
-  // Check if today's backup already exists
-  if (fs.existsSync(backupFilePath)) {
-    console.log(`Daily backup for ${dateStamp} already exists. Skipping.`);
+    if (fs.existsSync(backupFilePath)) {
+        logger.info(`Daily backup for ${dateStamp} already exists. Skipping.`);
+        cleanOldBackups(backupDir, backupFileNamePrefix, daysToRetain, logger);
+        return true;
+    }
 
-    // Call cleanup even if skipping the copy
-    cleanOldBackups(backupDir, backupFileNamePrefix, daysToRetain);
-    return true;
-  }
-
-  try {
-    // Use fs.copyFileSync for a simple copy operation
-    fs.copyFileSync(dbFilePath, backupFilePath);
-    console.log(`Automated Daily Backup created: ${backupFileName}`);
-
-    // Call cleanup after a successful new backup is created
-    cleanOldBackups(backupDir, backupFileNamePrefix, daysToRetain);
-    return true;
-  } catch (error) {
-    console.error(` Error creating automated backup:`, error.message);
-    return false;
-  }
+    try {
+        fs.copyFileSync(dbFilePath, backupFilePath);
+        logger.info(`Automated Daily Backup created: ${backupFileName}`);
+        cleanOldBackups(backupDir, backupFileNamePrefix, daysToRetain, logger);
+        return true;
+    } catch (error) {
+        logger.error(`Error creating automated backup:`, error.message);
+        return false;
+    }
 }
 
 module.exports = {
-  checkDatabaseIntegrity,
-  restoreFromBackup,
-  createBackup,
+    initializeDatabase,
+    getTableSchema,
+    checkDatabaseIntegrity,
+    restoreFromBackup,
+    createBackup,
 };
