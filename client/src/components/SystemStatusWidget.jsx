@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import Tooltip from './Tooltip';
 
 // Helper component for the table rows
 const StatusLine = ({ label, value, isGood }) => (
@@ -65,16 +66,20 @@ const SystemStatusWidget = () => {
   return (
     <>
       {/* --- FLOATING WIDGET --- */}
-      <div className="fixed bottom-4 right-4 w-72 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-40 transition-all">
+      <div className="fixed bottom-4 right-4 w-72 bg-white rounded-lg shadow-2xl border border-gray-200  z-40 transition-all">
+        
         {/* Header - Toggles expansion */}
         <div 
           className="bg-gray-800 text-white p-3 flex justify-between items-center cursor-pointer hover:bg-gray-700"
           onClick={() => setIsExpanded(!isExpanded)}
         >
+            <Tooltip text="Green means the system is healthy. Red means there is a connection issue with the database."></Tooltip>
           <h3 className="text-sm font-bold flex items-center">
+           
             <span className={`w-2.5 h-2.5 rounded-full mr-2 ${status.db_ready ? 'bg-green-500' : 'bg-red-500'}`}></span>
             System Health
           </h3>
+         
           <span className="text-xs font-mono">{isExpanded ? 'Collapse ▲' : 'Expand ▼'}</span>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import VisitorsDashboard from "./components/VisitorsDashboard";
 import VisitorDetailsForm from "./components/VisitorDetailsForm";
 import VisitorRegistrationForm from "./components/VisitorRegistrationForm";
@@ -7,6 +7,8 @@ import RecordMissedVisitModal from "./components/RecordMissedVisitModal";
 import HistoryDashboard from "./components/VisitHistory";
 import { logClientError } from "./components/utils/error_logging";
 import SystemStatusWidget from './components/SystemStatusWidget';
+import TutorialModal from './components/TutorialModal';
+import { HelpCircle } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -31,6 +33,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingRegistration, setLoadingRegistration] = useState(false);
+
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // --- UI/Mode State ---
   const [searchTerm, setSearchTerm] = useState("");
@@ -960,12 +964,23 @@ function App() {
 
   return (
     <div className="font-sans min-h-screen bg-blue-200 text-gray-800 p-4 md:p-8 flex flex-col items-center">
+      
       <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
       body { font-family: 'Inter', sans-serif; }
     `}</style>
       <script src="https://cdn.tailwindcss.com"></script>
+{/* FIX 1: Modal logic (onClose must be false) */}
+  {showTutorial && <TutorialModal onClose={() => setShowTutorial(false)} />}
 
+  {/* FIX 2: Added a Button to trigger the help */}
+  <button
+    onClick={() => setShowTutorial(true)}
+    className="absolute top-0 right-50 flex items-center gap-2 px-8 py-2 bg-white text-indigo-800 rounded-lg font-bold text-xs shadow-md hover:bg-indigo-50 border border-indigo-200 transition-all"
+  >
+    <HelpCircle size={16} />
+    Help Guide
+  </button>
       {/* Header */}
        <div className="flex flex-col items-center w-full mb-8 relative">
           <img
