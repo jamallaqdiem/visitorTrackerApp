@@ -35,7 +35,7 @@ export async function logClientError(error, info = {}, type = 'CLIENT_ERROR') {
 
   try {
     // Send the data to  backend endpoint 
-    await fetch(API_BASE_URL, {
+    await fetch(`${API_BASE_URL}/api/audit/log-error`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
