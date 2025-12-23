@@ -263,7 +263,7 @@ function HistoryDashboard({
                   <td className="px-4 py-4 text-sm font-medium text-gray-900 max-w-[50px] align-middle">
                     {visit.known_as || "--"}
                   </td>
-                  {/* Entry Time  */}{" "}
+                  {/* Entry Time  */}
                   <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap align-middle">
                     <div className="font-medium text-gray-800 leading-tight w-fit">
                       {formatDate(visit.entry_time).date}
@@ -272,7 +272,7 @@ function HistoryDashboard({
                       {formatDate(visit.entry_time).time}
                     </div>
                   </td>
-                  {/* Exit Time */}{" "}
+                  {/* Exit Time */}
                   <td className="px-4 py-4 text-sm whitespace-nowrap align-middle">
                     {visit.exit_time ? (
                       <div className="font-medium text-gray-800 leading-tight w-fit">
@@ -327,7 +327,7 @@ function HistoryDashboard({
                             key={index}
                             className="pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-indigo-400"
                           >
-                            {dep.full_name} (Age: {dep.age}){" "}
+                            {dep.full_name} Age: {dep.age}{" "}
                           </li>
                         ))}
                       </ul>

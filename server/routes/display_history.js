@@ -10,13 +10,14 @@ const express = require("express");
  */
 function createHistoryRouter(db, logger) {
   const router = express.Router();
-  
+
   //Endpoint to use the password
   router.post("/authorize-history", (req, res) => {
     const { password } = req.body;
 
-    const masterPassword = process.env.MASTER_PASSWORD2? process.env.MASTER_PASSWORD2.trim()
-    : null;
+    const masterPassword = process.env.MASTER_PASSWORD2
+      ? process.env.MASTER_PASSWORD2.trim()
+      : null;
 
     if (password === masterPassword) {
       logger.info("History authorization successful.");
@@ -26,7 +27,9 @@ function createHistoryRouter(db, logger) {
 
         .json({ success: true, message: "Authorization successful." });
     } else {
-      logger.warn("History authorization failed: Incorrect password provided (403).");
+      logger.warn(
+        "History authorization failed: Incorrect password provided (403)."
+      );
       return res.status(403).json({ message: "Incorrect password." });
     }
   });
@@ -78,10 +81,11 @@ function createHistoryRouter(db, logger) {
             T2.type,
             T2.mandatory_acknowledgment_taken,
             GROUP_CONCAT(
-                '{' 
-                || '"full_name":"' || T3.full_name || '",' 
-                || '"age":' || T3.age 
-                || '}'
+              CASE 
+                WHEN T3.full_name IS NOT NULL AND T3.full_name != '' 
+                THEN JSON_OBJECT('full_name', T3.full_name, 'age', T3.age)
+                ELSE NULL 
+              END
             ) AS additional_dependents_json
         FROM visitors AS T1
         JOIN visits AS T2
@@ -107,15 +111,21 @@ function createHistoryRouter(db, logger) {
 
       const results = rows.map((row) => {
         let dependents = [];
+        const recordId = row.visitor_id || "Unknown";
+
         if (row.additional_dependents_json) {
           try {
-            dependents = JSON.parse(`[${row.additional_dependents_json}]`);
+            // Ensure we don't have a double-bracket situation
+            let jsonStr = row.additional_dependents_json.trim();
+            if (!jsonStr.startsWith("[")) jsonStr = `[${jsonStr}]`;
+
+            // Replacing any remaining actual newlines with a space before parsing
+            jsonStr = jsonStr.replace(/\n/g, "\\n").replace(/\r/g, "\\r");
+
+            dependents = JSON.parse(jsonStr);
           } catch (e) {
-            logger.warn(
-              "Could not parse dependents JSON string:",
-              row.additional_dependents_json,
-              e
-            );
+            logger.warn(`[ID: ${recordId}] Still failing: ${e.message}`);
+            dependents = [];
           }
         }
 
