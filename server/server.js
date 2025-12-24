@@ -1,5 +1,15 @@
 // server/server.js
 require("dotenv").config();
+const Sentry = require("@sentry/node");
+
+// 1. Initialize Sentry ONLY if DSN exists
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  });
+  console.log("🚀 Sentry Monitoring initialized (Optional Mode).");
+}
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
@@ -8,7 +18,11 @@ const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const app = express();
-const PORT = 3001;
+// 2. Sentry Request Handler (Must be the first middleware)
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
+const PORT = process.env.PORT || 3001;
 const logger = require("./logger");
 const { updateStatus, getStatus } = require("./status_tracker");
 
@@ -219,7 +233,7 @@ const initializeServer = async () => {
             app.get("/api/status", (req, res) => {
               res.json(getStatus());
             });
-            
+
             app.use("/api/audit/", createAuditRouter(db, logger));
             app.use("/", createRegistrationRouter(db, upload, logger));
             app.use("/", createVisitorsRouter(db, logger));
@@ -231,7 +245,17 @@ const initializeServer = async () => {
             app.use("/", createSearchVisitorsRouter(db, logger));
             app.use("/", createMissedVisitRouter(db, logger));
             app.use("/", createHistoryRouter(db, logger));
-
+            if (process.env.SENTRY_DSN) {
+              Sentry.setupExpressErrorHandler(app);
+            }
+            // Custom error formatter for Winston logger
+            app.use((err, req, res, next) => {
+              logger.error(`Unhandled Server Error: ${err.message}`);
+              res.status(500).json({
+                error: "Internal Server Error",
+                message: err.message,
+              });
+            });
             //  START LISTENING ONLY AFTER ALL DB WORK AND ROUTERS ARE ATTACHED
             app.listen(PORT, () => {
               logger.info(`Server is running on http://localhost:${PORT}`);
