@@ -39,6 +39,18 @@ src/components/VisitorStatusList.jsx: Component responsible for fetching and dis
 
 Other Components: Contains modular UI elements like buttons, modals (for Ban/Unban confirmation), and search/filtering logic.
 
+Database Connectivity: Real-time status of the SQLite connection.
+
+Client Errors: Displays a RENDER_CRASH warning if the Error Boundary catches a frontend exception.
+
+src/components/ErrorBoundary.jsx: Wraps the application to catch React render crashes and report them to Sentry.
+
+src/components/ContractorHandoverModal.jsx: A specialized safety modal that intercepts sign-outs for contractors to ensure maintenance updates are relayed to management
+
+.env requirements:
+CLIENT_URL: The URL of the frontend client (required for CORS configuration, e.g., http://localhost:5173).
+VITE_SENTRY_DSN: The DSN key for frontend error reporting.
+
 🎨 Styling
 
 All user interface styling is handled using Tailwind CSS utility classes. This ensures consistency and responsive design across all devices. No custom CSS files are used, simplifying the styling workflow.

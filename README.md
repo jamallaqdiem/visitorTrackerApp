@@ -27,6 +27,8 @@ Update Details: Edit contact information, unit visited, and purpose.
 
 Data Export: Feature to export the entire history data for a specific visitor into a CSV file.
 
+Error Monitoring: Integrated Sentry tracking for real-time frontend and backend crash reporting.
+
 Backend (Server)
 Node.js/Express: A clean, componentized API structure (registration.js, visitors.js, login.js, etc.).
 
@@ -35,6 +37,8 @@ SQLite3 Database: Local, file-based persistence for visitor records and history.
 Secure Ban/Unban: Administrative actions are protected by a shared secret password stored in the server's .env file.
 
 API Endpoints: Dedicated routes for registration, sign-in/out, status check, administrative updates, and history export.
+
+Automated Log Management: Winston-based audit logging with 60-day auto-rotation and compression.
 
 🛠️ Tech Stack
 Client (Frontend)
@@ -50,6 +54,10 @@ Node.js & Express: Runtime environment and web framework for the REST API.
 SQLite3: Database for persistent storage.
 
 DOTENV: For environment variable management.
+
+Sentry: Application monitoring and error tracking.
+
+Winston: Professional logging library for Node.js.
 
 Cross-Origin Resource Sharing (CORS): Configured for development communication between client and server.
 
