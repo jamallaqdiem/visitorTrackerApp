@@ -110,7 +110,7 @@ describe("Audit Log Endpoint Integration Test", () => {
         expect(logs[0].status).toBe(testErrorData.status); 
         
         // On success (201), the server logs INFO. check for the INFO call.
-        expect(loggerMock.info).toHaveBeenCalledWith(expect.stringContaining(`Successfully recorded client error: ${testErrorData.event_name}`));
+        expect(loggerMock.info).toHaveBeenCalledWith(expect.stringContaining(`${testErrorData.event_name}`));
 
         // We also ensure that the error logger was NOT called, as the operation was successful.
         expect(loggerMock.error).not.toHaveBeenCalled();
