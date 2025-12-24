@@ -16,9 +16,6 @@ The server relies on environment variables for configuration and security. Creat
 PORT: The port on which the Express server will run (e.g., 3001).
 
 ADMIN_PASSWORD: The secret password required to authorize sensitive actions (e.g., BAN, UNBAN).
-
-CLIENT_URL: The URL of the frontend client (required for CORS configuration, e.g., http://localhost:5173).
-
 Database
 This application uses a file-based SQLite3 database.
 
