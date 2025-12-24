@@ -13,9 +13,10 @@ npm install
 Environment Variables
 The server relies on environment variables for configuration and security. Create a file named .env in this directory and define the following variables:
 
+SENTRY_DSN:The DSN key for backend error reporting.
 PORT: The port on which the Express server will run (e.g., 3001).
-
-ADMIN_PASSWORD: The secret password required to authorize sensitive actions (e.g., BAN, UNBAN).
+MASTER_PASSWORD2:THe password to access database
+MASTER_PASSWORD: The secret password required to authorize sensitive actions (e.g., BAN, UNBAN).
 Database
 This application uses a file-based SQLite3 database.
 

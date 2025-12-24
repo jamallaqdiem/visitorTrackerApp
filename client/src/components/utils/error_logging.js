@@ -9,7 +9,6 @@ import * as Sentry from "@sentry/react";
  */
 export async function logClientError(error, info = {}, type = 'CLIENT_ERROR') {
   if (!error) return;
-
   const logData = {
     // Audit Log Table Mapping:
     event_name: type,
@@ -30,9 +29,10 @@ export async function logClientError(error, info = {}, type = 'CLIENT_ERROR') {
   console.log(JSON.stringify(logData, null, 2)); 
   console.groupEnd();
 
-  // SENTRY INTEGRATION
-  Sentry.captureException(error, { extra: info });
-
+// We check if the VITE_SENTRY_DSN exists before calling Sentry
+  if (import.meta.env.VITE_SENTRY_DSN) {
+    Sentry.captureException(error, { extra: info });
+  }
   try {
     // Send the data to  backend endpoint 
     await fetch(`${API_BASE_URL}/api/audit/log-error`, {
