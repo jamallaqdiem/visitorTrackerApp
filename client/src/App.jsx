@@ -8,6 +8,7 @@ import HistoryDashboard from "./components/VisitHistory";
 import { logClientError } from "./components/utils/error_logging";
 import SystemStatusWidget from './components/SystemStatusWidget';
 import TutorialModal from './components/TutorialModal';
+import ContractorHandoverModal from "./components/ContractorHandoverModal";
 import { HelpCircle } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -35,6 +36,7 @@ function App() {
   const [loadingRegistration, setLoadingRegistration] = useState(false);
 
   const [showTutorial, setShowTutorial] = useState(false);
+  const [visitorToSignOut, setVisitorToSignOut] = useState(null);
 
   // --- UI/Mode State ---
   const [searchTerm, setSearchTerm] = useState("");
@@ -753,37 +755,46 @@ function App() {
   };
 
 
-  // 6. Sign Out (From Dashboard)
-  const handleVisitorLogout = async (id) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/exit-visitor/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+  // 6. Sign Out From Dashboard
+  // 1. This is what "Sign Out" button calls
+const handleVisitorLogout = (id) => {
+  const visitor = visitors.find(v => v.id === id);
+  
+  if (visitor?.type?.toLowerCase() === 'contractor') {
+    setVisitorToSignOut(id); // Opens the modal
+  } else {
+    executeApiLogout(id); // Regular logout
+  }
+};
+// 2.  what the Modal calls
+const confirmContractorExit = () => {
+  if (visitorToSignOut) {
+    executeApiLogout(visitorToSignOut);
+    setVisitorToSignOut(null); // Closes the modal
+  }
+};
+// 3.  The actual API logic
+const executeApiLogout = async (id) => {
+  const visitor = visitors.find(v => v.id === id);
+  try {
+    const response = await fetch(`${API_BASE_URL}/exit-visitor/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
 
-      const result = await response.json();
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Failed to sign out.");
 
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to sign out visitor.");
-      }
-
-      showNotification(result.message, "success");
-      fetchVisitors();
-    } catch (err) {
-      logClientError(
-        err, 
-        { 
-          // Include relevant context data for debugging
-          visitorName: `${selectedVisitor.first_name} ${selectedVisitor.last_name}`,
-          visitorId: id,
-          endpoint: '/exit-visitor'
-        }, 
-        'API_EXIT_VISITOR_FAIL'
-      );
-      console.error("Logout Error:", err.message);
-      showNotification(`Logout Failed: ${err.message}`, "error");
-    }
-  };
+    showNotification(result.message, "success");
+    fetchVisitors();
+  } catch (err) {
+    logClientError(err, { 
+      visitorName: visitor ? `${visitor.first_name} ${visitor.last_name}` : 'Unknown',
+      visitorId: id 
+    }, 'API_EXIT_VISITOR_FAIL');
+    showNotification(`Logout Failed: ${err.message}`, "error");
+  }
+};
 
   // --- HISTORY DATA LOGIC ---
 
@@ -970,10 +981,11 @@ function App() {
       body { font-family: 'Inter', sans-serif; }
     `}</style>
       <script src="https://cdn.tailwindcss.com"></script>
-{/* FIX 1: Modal logic (onClose must be false) */}
+      
+{/*  Modal logic (onClose must be false) */}
   {showTutorial && <TutorialModal onClose={() => setShowTutorial(false)} />}
 
-  {/* FIX 2: Added a Button to trigger the help */}
+  {/* Added a Button to trigger the help */}
   <button
     onClick={() => setShowTutorial(true)}
     className="absolute top-0 right-50 flex items-center gap-2 px-8 py-2 bg-white text-indigo-800 rounded-lg font-bold text-xs shadow-md hover:bg-indigo-50 border border-indigo-200 transition-all"
@@ -1014,6 +1026,7 @@ function App() {
         >
           {showHistory ? "Show Dashboard" : "View Historical Data"}
         </button>
+      
         {/* Button Group for View Switching */}
         {!showHistory && !showRegistration && (
           <div className="flex min-w-[200px] justify-center mt-4">
@@ -1038,7 +1051,7 @@ function App() {
         )}
         </div>
       </div>
-
+      <div>
       <div className="w-full max-w-6xl mx-auto">
         {/* Dashboard View */}
         {!showRegistration && !showHistory && !selectedVisitor && (
@@ -1151,7 +1164,12 @@ function App() {
       <SystemStatusWidget />
     
     </div>
+      <ContractorHandoverModal 
+      isOpen={!!visitorToSignOut} 
+      onConfirm={confirmContractorExit} 
+      onCancel={() => setVisitorToSignOut(null)} 
+    />
+  </div>
   );
 }
-
 export default App;
